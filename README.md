@@ -2,6 +2,15 @@
 
 This repository contains R notebooks and helper scripts for the tropical natural-ventilation EnergyPlus/eplusr analysis used in the manuscript figures.
 
+## Research Context
+
+This codebase is being prepared as supporting analysis code for Horikoshi et
+al. (2026):
+
+- Title: Mixed-mode ventilation potential coupled with air movement in tropical
+  climates
+- Authors: Kazuki Horikoshi, Federico Tartarini and Adrian Chong
+
 ## Main workflow
 
 - `analysis/E+simulatior_multimetclo_daytime.Rmd`: upstream EnergyPlus/eplusr simulation workflow.
