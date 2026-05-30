@@ -1,0 +1,744 @@
+Program Version,EnergyPlus, Version 9.5.0-de239b2e5f, YMD=2025.08.12 16:07,
+   ** Warning ** Output:PreprocessorMessage="GroundTempCalc - Slab" has the following Warning condition:
+   **   ~~~   ** Slab thickness [0.100 m] reset to 0.122 m  for computational stability.
+   ************* Beginning Zone Sizing Calculations
+   ** Warning ** Weather file location will be used rather than entered (IDF) Location object.
+   **   ~~~   ** ..Location object=HONOLULU INTL ARPT_HI_USA DESIGN_CONDITIONS
+   **   ~~~   ** ..Weather File Location=SGP_SINGAPORE-CHANGI-IAP - SGP Custom-486980 WMO#=486980
+   **   ~~~   ** ..due to location differences, Latitude difference=[19.97] degrees, Longitude difference=[261.92] degrees.
+   **   ~~~   ** ..Time Zone difference=[18.0] hour(s), Elevation difference=[200.00] percent, [4.00] meters.
+   ** Warning ** GetHTSurfaceData: Surfaces with interface to Ground found but no "Ground Temperatures" were input.
+   **   ~~~   ** Found first in surface=BGFLOOR
+   **   ~~~   ** Defaults, constant throughout the year of (18.0) will be used.
+   ** Warning ** GetSurfaceData: InterZone Surface Azimuths do not match as expected.
+   **   ~~~   **   Azimuth=270.0, Tilt=90.0, in Surface=WALL_SDL_1.UNIT3_BACKROW_TOPFLOOR, Zone=LIVING_UNIT3_BACKROW_TOPFLOOR
+   **   ~~~   **   Azimuth=270.0, Tilt=90.0, in Surface=WALL_SDL_1.UNIT2_BACKROW_TOPFLOOR, Zone=LIVING_UNIT2_BACKROW_TOPFLOOR
+   **   ~~~   ** ..surface class of first surface=Wall
+   **   ~~~   ** ..surface class of second surface=Wall
+   ** Warning ** CalculateZoneVolume: The Zone="CRAWLSPACE" is not fully enclosed. To be fully enclosed, each edge of a surface must also be an edge on one other surface.
+   **   ~~~   **   The zone volume was calculated using the opposite wall area times the distance between them method 
+   **   ~~~   **   The surface    "BGWALL_LOWER_LDB" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 19.8386, -0.6098}
+   **   ~~~   **     Vertex end   { 0.0000, 19.8386, -0.6098}
+   **   ~~~   **   The surface    "BGFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 19.8170, -0.6098}
+   **   ~~~   **     Vertex end   { 36.5369, 19.8170, -0.6098}
+   **   ~~~   **   The surface    "iz-FLOOR_UNIT1_FRONTROW_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 12.1790, 9.1571, 0.1524}
+   **   ~~~   **     Vertex end   { 0.0000, 9.1571, 0.1524}
+   **   ~~~   **   The surface    "iz-FLOOR_UNIT2_FRONTROW_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 24.3579, 9.1571, 0.1524}
+   **   ~~~   **     Vertex end   { 12.1790, 9.1571, 0.1524}
+   **   ~~~   **   The surface    "iz-FLOOR_UNIT3_FRONTROW_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 9.1571, 0.1524}
+   **   ~~~   **     Vertex end   { 24.3579, 9.1571, 0.1524}
+   **   ~~~   **   The surface    "iz-FLOOR_UNIT1_BACKROW_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 10.6815, 0.1524}
+   **   ~~~   **     Vertex end   { 12.1790, 10.6815, 0.1524}
+   **   ~~~   **   The surface    "iz-FLOOR_UNIT2_BACKROW_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 12.1790, 10.6815, 0.1524}
+   **   ~~~   **     Vertex end   { 24.3579, 10.6815, 0.1524}
+   **   ~~~   **   The surface    "iz-FLOOR_UNIT3_BACKROW_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 24.3579, 10.6815, 0.1524}
+   **   ~~~   **     Vertex end   { 36.5369, 10.6815, 0.1524}
+   ** Warning ** CalculateZoneVolume: The Zone="BREEZEWAY" is not fully enclosed. To be fully enclosed, each edge of a surface must also be an edge on one other surface.
+   **   ~~~   **   The zone volume was calculated using the floor area times ceiling height method where the floor and ceiling are the same except for the z-coordinates.
+   **   ~~~   **   The surface    "BREEZEWAY_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 10.6802, 0.1524}
+   **   ~~~   **     Vertex end   { 36.5369, 10.6802, 0.1524}
+   **   ~~~   **   The surface    "BREEZEWAY_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 10.6802, 0.1524}
+   **   ~~~   **     Vertex end   { 36.5369, 9.1562, 0.1524}
+   **   ~~~   **   The surface    "BREEZEWAY_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 9.1562, 0.1524}
+   **   ~~~   **     Vertex end   { 0.0000, 9.1562, 0.1524}
+   **   ~~~   **   The surface    "BREEZEWAY_BOTTOMFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 9.1562, 0.1524}
+   **   ~~~   **     Vertex end   { 0.0000, 10.6802, 0.1524}
+   **   ~~~   **   The surface    "BREEZEWAY_MIDDLEFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 10.6802, 2.7415}
+   **   ~~~   **     Vertex end   { 36.5369, 10.6802, 2.7415}
+   **   ~~~   **   The surface    "BREEZEWAY_MIDDLEFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 10.6802, 2.7415}
+   **   ~~~   **     Vertex end   { 36.5369, 9.1562, 2.7415}
+   **   ~~~   **   The surface    "BREEZEWAY_MIDDLEFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 9.1562, 2.7415}
+   **   ~~~   **     Vertex end   { 0.0000, 9.1562, 2.7415}
+   **   ~~~   **   The surface    "BREEZEWAY_MIDDLEFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 9.1562, 2.7415}
+   **   ~~~   **     Vertex end   { 0.0000, 10.6802, 2.7415}
+   **   ~~~   **   The surface    "BREEZEWAY_TOPFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 10.6802, 5.3300}
+   **   ~~~   **     Vertex end   { 36.5369, 10.6802, 5.3300}
+   **   ~~~   **   The surface    "BREEZEWAY_TOPFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 10.6802, 5.3300}
+   **   ~~~   **     Vertex end   { 36.5369, 9.1562, 5.3300}
+   **   ~~~   **   The surface    "BREEZEWAY_TOPFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 9.1562, 5.3300}
+   **   ~~~   **     Vertex end   { 0.0000, 9.1562, 5.3300}
+   **   ~~~   **   The surface    "BREEZEWAY_TOPFLOOR" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 9.1562, 5.3300}
+   **   ~~~   **     Vertex end   { 0.0000, 10.6802, 5.3300}
+   **   ~~~   **   The surface    "BREEZEWAYROOF" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 10.6802, 7.9200}
+   **   ~~~   **     Vertex end   { 0.0000, 10.6802, 7.9200}
+   **   ~~~   **   The surface    "BREEZEWAYROOF" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 10.6802, 7.9200}
+   **   ~~~   **     Vertex end   { 0.0000, 9.1562, 7.9200}
+   **   ~~~   **   The surface    "BREEZEWAYROOF" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 0.0000, 9.1562, 7.9200}
+   **   ~~~   **     Vertex end   { 36.5369, 9.1562, 7.9200}
+   **   ~~~   **   The surface    "BREEZEWAYROOF" has an edge that is either not an edge on another surface or is an edge on three or more surfaces: 
+   **   ~~~   **     Vertex start { 36.5369, 9.1562, 7.9200}
+   **   ~~~   **     Vertex end   { 36.5369, 10.6802, 7.9200}
+   ** Warning ** CheckUsedConstructions: There are 12 nominally unused constructions in input.
+   **   ~~~   ** Each Unused construction is shown.
+   ************* Construction=INTERIORFURNISHINGS
+   ************* Construction=ATTIC FLOOR
+   ************* Construction=FNDN_ROOF
+   ************* Construction=INTERIOR WALL
+   ************* Construction=INTERIOR WINDOW
+   ************* Construction=INTERIOR DOOR
+   ************* Construction=CRAWL_FLOOR
+   ************* Construction=INSULATED PIPE
+   ************* Construction=PLAIN PIPE
+   ************* Construction=TDD PIPE
+   ************* Construction=TDD DOME
+   ************* Construction=TDD DIFFUSER
+   ** Warning ** Calculated design heating load for zone=LIVING_UNIT2_FRONTROW_MIDDLEFLOOR is zero.
+   **   ~~~   ** Check Sizing:Zone and ZoneControl:Thermostat inputs.
+   ** Warning ** Calculated design heating load for zone=LIVING_UNIT2_BACKROW_MIDDLEFLOOR is zero.
+   **   ~~~   ** Check Sizing:Zone and ZoneControl:Thermostat inputs.
+   ************* Beginning System Sizing Calculations
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT1_FRONTROW_BOTTOMFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 0.113272
+   **   ~~~   ** ...Requested capacity (W ) = 2865.317
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.953E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 2812.823
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT1_FRONTROW_BOTTOMFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT1_FRONTROW_BOTTOMFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT2_FRONTROW_BOTTOMFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 5.256225E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1549.427
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.392E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1305.245
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT2_FRONTROW_BOTTOMFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT2_FRONTROW_BOTTOMFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT3_FRONTROW_BOTTOMFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 6.826504E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1936.944
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.524E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1695.183
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT3_FRONTROW_BOTTOMFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT3_FRONTROW_BOTTOMFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT1_BACKROW_BOTTOMFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 0.123374
+   **   ~~~   ** ...Requested capacity (W ) = 3068.365
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 4.020E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 3063.680
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT1_BACKROW_BOTTOMFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT1_BACKROW_BOTTOMFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT2_BACKROW_BOTTOMFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 6.165465E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1752.663
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.517E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1531.031
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT2_BACKROW_BOTTOMFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT2_BACKROW_BOTTOMFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT3_BACKROW_BOTTOMFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 7.514986E-002
+   **   ~~~   ** ...Requested capacity (W ) = 2082.974
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.607E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1866.150
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT3_BACKROW_BOTTOMFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT3_BACKROW_BOTTOMFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT1_FRONTROW_MIDDLEFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT1_FRONTROW_MIDDLEFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT2_FRONTROW_MIDDLEFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 5.466899E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1547.724
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.532E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1357.561
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT2_FRONTROW_MIDDLEFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT2_FRONTROW_MIDDLEFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT3_FRONTROW_MIDDLEFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 6.715895E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1862.514
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.605E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1667.716
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT3_FRONTROW_MIDDLEFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT3_FRONTROW_MIDDLEFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT1_BACKROW_MIDDLEFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT1_BACKROW_MIDDLEFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT2_BACKROW_MIDDLEFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 6.335530E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1726.210
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.670E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1573.263
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT2_BACKROW_MIDDLEFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT2_BACKROW_MIDDLEFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT3_BACKROW_MIDDLEFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 7.390421E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1998.029
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.698E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1835.217
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT3_BACKROW_MIDDLEFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT3_BACKROW_MIDDLEFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT1_FRONTROW_TOPFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT1_FRONTROW_TOPFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT2_FRONTROW_TOPFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 7.282519E-002
+   **   ~~~   ** ...Requested capacity (W ) = 1992.780
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.654E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1808.423
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT2_FRONTROW_TOPFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT2_FRONTROW_TOPFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT3_FRONTROW_TOPFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 8.306678E-002
+   **   ~~~   ** ...Requested capacity (W ) = 2231.497
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.722E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 2062.746
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT3_FRONTROW_TOPFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT3_FRONTROW_TOPFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Heating:DX:SingleSpeed MAIN DX HEATING COIL_UNIT3_FRONTROW_TOPFLOOR
+   **   ~~~   ** ...Gross Rated Heating Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 8.306678E-002
+   **   ~~~   ** ...Requested capacity (W ) = 2062.746
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 2062.746
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT1_BACKROW_TOPFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT1_BACKROW_TOPFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT2_BACKROW_TOPFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 7.685844E-002
+   **   ~~~   ** ...Requested capacity (W ) = 2077.355
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.699E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 1908.578
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT2_BACKROW_TOPFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT2_BACKROW_TOPFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** SizeDXCoil Coil:Cooling:DX:SingleSpeed DX COOLING COIL_UNIT3_BACKROW_TOPFLOOR
+   **   ~~~   ** ...Gross Rated Total Cooling Capacity [W] will be limited by the minimum rated volume flow per rated total capacity ratio.
+   **   ~~~   ** ...DX coil volume flow rate (m3/s ) = 8.730689E-002
+   **   ~~~   ** ...Requested capacity (W ) = 2323.508
+   **   ~~~   ** ...Requested flow/capacity ratio (m3/s/W ) = 3.757E-005
+   **   ~~~   ** ...Minimum flow/capacity ratio (m3/s/W ) = 4.027E-005
+   **   ~~~   ** ...Adjusted capacity ( W ) = 2168.038
+   ** Warning ** The Standard Ratings is calculated for Coil:Cooling:DX:SingleSpeed = DX COOLING COIL_UNIT3_BACKROW_TOPFLOOR but not at the AHRI test condition due to curve out of bound.
+   **   ~~~   **  Review the Standard Ratings calculations in the Engineering Reference for this coil type. Also, use Output:Diagnostics, DisplayExtraWarnings for further guidance.
+   **   ~~~   ** CheckCurveLimitsForStandardRatings: The max and/or min limits specified in the corresponding curve objects
+   **   ~~~   **  do not include the AHRI test conditions required to calculate one or more of the Standard Rating values.
+   **   ~~~   ** Coil:Cooling:DX:SingleSpeed=DX COOLING COIL_UNIT3_BACKROW_TOPFLOOR:  Integrated Energy Efficiency Ratio (IEER) calculated is not at the AHRI test condition.
+   **   ~~~   **  Check limits in Total Cooling Capacity Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLCAPFT
+   **   ~~~   **  Check limits in EIR Function of Temperature Curve, Curve Type = Curve:Biquadratic, Curve Name = HPACCOOLEIRFT
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT1_FRONTROW_BOTTOMFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT1_FRONTROW_BOTTOMFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT2_FRONTROW_BOTTOMFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT2_FRONTROW_BOTTOMFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT3_FRONTROW_BOTTOMFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT3_FRONTROW_BOTTOMFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT1_BACKROW_BOTTOMFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT1_BACKROW_BOTTOMFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT2_BACKROW_BOTTOMFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT2_BACKROW_BOTTOMFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT3_BACKROW_BOTTOMFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT3_BACKROW_BOTTOMFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT1_FRONTROW_MIDDLEFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT1_FRONTROW_MIDDLEFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT2_FRONTROW_MIDDLEFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT2_FRONTROW_MIDDLEFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT3_FRONTROW_MIDDLEFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT3_FRONTROW_MIDDLEFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT1_BACKROW_MIDDLEFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT1_BACKROW_MIDDLEFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT2_BACKROW_MIDDLEFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT2_BACKROW_MIDDLEFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT3_BACKROW_MIDDLEFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT3_BACKROW_MIDDLEFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT1_FRONTROW_TOPFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT1_FRONTROW_TOPFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT2_FRONTROW_TOPFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT2_FRONTROW_TOPFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT3_FRONTROW_TOPFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT3_FRONTROW_TOPFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT1_BACKROW_TOPFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT1_BACKROW_TOPFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT2_BACKROW_TOPFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT2_BACKROW_TOPFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Coil:WaterHeating:AirToWaterHeatPump:Wrapped "HEAT PUMP WATER HEATER EVAPORATOR_UNIT3_BACKROW_TOPFLOOR": Rated air volume flow rate per watt of rated total water heating capacity is out of range
+   **   ~~~   ** Min Rated Vol Flow Per Watt=[4.027E-005], Rated Vol Flow Per Watt=[1.260E-004], Max Rated Vol Flow Per Watt=[8.056E-005]. See Input-Output Reference Manual for valid range.
+   ** Warning ** Water heater = WATER HEATER_TANK_UNIT3_BACKROW_TOPFLOOR:  Recovery Efficiency and Energy Factor could not be calculated during the test for standard ratings
+   **   ~~~   ** Setpoint was never recovered and/or heater never turned on
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT1_FRONTROW_BOTTOMFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT2_FRONTROW_BOTTOMFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT3_FRONTROW_BOTTOMFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT1_BACKROW_BOTTOMFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT2_BACKROW_BOTTOMFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT3_BACKROW_BOTTOMFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT1_FRONTROW_MIDDLEFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT2_FRONTROW_MIDDLEFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT3_FRONTROW_MIDDLEFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT1_BACKROW_MIDDLEFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT2_BACKROW_MIDDLEFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT3_BACKROW_MIDDLEFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT1_FRONTROW_TOPFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT2_FRONTROW_TOPFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT3_FRONTROW_TOPFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT1_BACKROW_TOPFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT2_BACKROW_TOPFLOOR
+   ** Warning ** Check input. Pump nominal power or motor efficiency is set to 0, for pump=MAINS PRESSURE_UNIT3_BACKROW_TOPFLOOR
+   ************* Testing Individual Branch Integrity
+   ************* All Branches passed integrity testing
+   ************* Testing Individual Supply Air Path Integrity
+   ************* All Supply Air Paths passed integrity testing
+   ************* Testing Individual Return Air Path Integrity
+   ************* All Return Air Paths passed integrity testing
+   ************* No node connection errors were found.
+   ************* Beginning Simulation
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_FRONTROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** See Warmup Convergence Information in .eio file for details.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 4.39E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.80E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6675 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 1.1859E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_FRONTROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 7.64E-004 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 7.97E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.1608 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 1.5291E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_FRONTROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 4.34E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.73E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6625 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 1.1796E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_BACKROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 4.27E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.72E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6670 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 1.1735E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_BACKROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 1.45E-003 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 2.32E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.2933 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 1.3265E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_BACKROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 4.35E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.77E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6683 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 1.1810E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_FRONTROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 8.58E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 0.14 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.6834 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 2.1947E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_BACKROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 3.42E-003 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 2.47E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 2.6983 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 6.8372E-003 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_BACKROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 8.64E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 0.14 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.6844 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 2.1719E-002 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_BACKROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 4.97E-008 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.85E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6350 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 3.6144 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_FRONTROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 4.38E-008 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.82E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6329 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 3.6145 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_FRONTROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 7.37E-008 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.85E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6353 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 3.6144 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_BACKROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 1.86E-003 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 1.24E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 6.0421E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 9.7641E-003 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_FRONTROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 1.90E-003 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 1.25E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 6.1226E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 9.7332E-003 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_BACKROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN HTG 99.6% CONDNS DB"
+   **   ~~~   ** ..Max Temp Comparison = 7.47E-008 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 7.07E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 1.6336 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 3.6130 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Warning ** In Output:Table:Monthly 'COILLOADS' invalid Variable or Meter Name 'HEATING COIL AIR HEATING RATE'
+   ** Warning ** In Output:Table:Monthly 'WATER HEATER: LOADS' invalid Variable or Meter Name 'WATER HEATER TOTAL DEMAND RATE'
+   ** Warning ** In Output:Table:Monthly 'WATER HEATER: LOADS' invalid Variable or Meter Name 'WATER HEATER TOTAL DEMAND ENERGY'
+   ** Warning ** In Output:Table:Monthly 'LIGHTING LOADS' invalid Variable or Meter Name 'ZONE LIGHTS ELECTRIC CONSUMPTION'
+   ** Warning ** In Output:Table:Monthly 'LIGHTING LOADS' invalid Variable or Meter Name 'EXTERIOR LIGHTS ELECTRIC CONSUMPTION'
+   ** Warning ** In Output:Table:Monthly 'INTERNALGAINS' invalid Variable or Meter Name 'ZONE PEOPLE TOTAL HEAT GAIN'
+   ** Warning ** In Output:Table:Monthly 'INTERNALGAINS' invalid Variable or Meter Name 'ZONE LIGHTS TOTAL HEAT GAIN'
+   ** Warning ** In Output:Table:Monthly 'INTERNALGAINS' invalid Variable or Meter Name 'ZONE ELECTRIC EQUIPMENT TOTAL HEAT GAIN'
+   ** Warning ** In Output:Table:Monthly 'INTERNALGAINS' invalid Variable or Meter Name 'ZONE GAS EQUIPMENT TOTAL HEAT GAIN'
+   ** Warning ** In Output:Table:Monthly 'INTERNALGAINS' invalid Variable or Meter Name 'ZONE OTHER EQUIPMENT TOTAL HEAT GAIN'
+   ** Warning ** In Output:Table:Monthly 'INTERNALGAINS' invalid Variable or Meter Name 'ZONE TOTAL INTERNAL TOTAL HEAT GAIN'
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_FRONTROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN CLG .4% CONDNS DB=>MWB"
+   **   ~~~   ** ..Max Temp Comparison = 0.37 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 6.28E-005 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 6.7754E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_BACKROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN CLG .4% CONDNS DB=>MWB"
+   **   ~~~   ** ..Max Temp Comparison = 0.37 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 4.71E-005 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.2673 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_FRONTROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN CLG .4% CONDNS DB=>MWB"
+   **   ~~~   ** ..Max Temp Comparison = 2.15E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 1.01E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.1543 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_FRONTROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN CLG .4% CONDNS DB=>MWB"
+   **   ~~~   ** ..Max Temp Comparison = 0.37 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 4.22E-005 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 5.8787E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_BACKROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN CLG .4% CONDNS DB=>MWB"
+   **   ~~~   ** ..Max Temp Comparison = 0.38 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 3.08E-005 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 8.2539E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_BACKROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN CLG .4% CONDNS DB=>MWB"
+   **   ~~~   ** ..Max Temp Comparison = 0.33 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 1.93E-005 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 4.5273E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT3_FRONTROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(SizingPeriod)="HONOLULU INTL ARPT ANN CLG .4% CONDNS DB=>MWB"
+   **   ~~~   ** ..Max Temp Comparison = 0.32 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 2.42E-005 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 5.7091E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_FRONTROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 4.38E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 0.11 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.3960 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_FRONTROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 5.16E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 0.15 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 5.8879E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_BACKROW_BOTTOMFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 8.89E-003 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 0.12 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.2105 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_FRONTROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 2.68E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 5.23E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.2716 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_FRONTROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 5.68E-003 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 8.12E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 6.1472E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_BACKROW_MIDDLEFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 3.85E-003 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 7.56E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.2147 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_FRONTROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 3.82E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 4.68E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.3336 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT2_FRONTROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 3.24E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 9.98E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 4.1706E-002 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ** Severe  ** CheckWarmupConvergence: Loads Initialization, Zone="LIVING_UNIT1_BACKROW_TOPFLOOR" did not converge after 25 warmup days.
+   **   ~~~   ** ...Environment(RunPeriod)="ANNUAL"
+   **   ~~~   ** ..Max Temp Comparison = 2.63E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Min Temp Comparison = 4.67E-002 vs Temperature Convergence Tolerance=0.40 - Pass Convergence
+   **   ~~~   ** ..Max Heat Load Comparison = 0.0000 vs Loads Convergence Tolerance=4.00E-002 - Pass Convergence
+   **   ~~~   ** ..Max Cool Load Comparison = 0.3412 vs Loads Convergence Tolerance=4.00E-002 - Fail Convergence
+   ************* Simulation Error Summary *************
+   ** Warning ** The following Report Variables were requested but not generated -- check.rdd file
+   **   ~~~   ** Either the IDF did not contain these elements, the variable name is misspelled,
+   **   ~~~   ** or the requested variable is an advanced output which requires Output : Diagnostics, DisplayAdvancedReportVariables;
+   ************* Key=System_unit1_FrontRow_BottomFloor, VarName=AVAILABILITY MANAGER HYBRID VENTILATION CONTROL MODE, Frequency=TimeStep
+   ** Warning ** The following schedule names are "Unused Schedules".  These schedules are in the idf
+   **   ~~~   **  file but are never obtained by the simulation and therefore are NOT used.
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=INTERIORLIGHTINGHE_OS
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=INTERIORLIGHTINGHE_VS
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=DHW_SCH
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SINKS
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SHOWERS
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=BATHS
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=DHWDIST
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=INF_SCH
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SHADING_2009IECC
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=DHW_SETPT
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SUPPLY-AIR-TEMP-SCH
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=HEATING_SCH_HREF
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=COOLING_SCH_HREF
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=MINIMUM OUTDOOR VENTILATION AIR SCHEDULE: ALWAYS 1 AC/H
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SINKSENSSCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SINKLATSCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SHOWERSENSSCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=SHOWERLATSCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=BATHSENSSCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=BATHLATSCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=WATERHEATERSP1SCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=WATERHEATERSP2SCHEDULE
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=BOILER_SETPT
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=DOASHIGHTEMP
+   ************* Schedule:Year or Schedule:Compact or Schedule:File or Schedule:Constant=DOASLOWTEMP
+   ** Warning ** The following week schedule names are "Unused Schedules".  These schedules are in the idf
+   **   ~~~   **  file but are never obtained by the simulation and therefore are NOT used.
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=DHW_PROFILE_WEEK
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=SINKSWEEK
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=SHOWERSWEEK
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=BATHSWEEK
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=DHWDISTWEEK
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=LIGHTINGPROFILEWEEK_EELIGHTING_INTERIOR_CONTROLS
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=LIGHTINGPROFILEWEEK_EELIGHTING_GARAGE_CONTROLS
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=SINKSENSSCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=SINKLATSCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=SHOWERSENSSCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=SHOWERLATSCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=BATHSENSSCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=BATHLATSCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=WATERHEATERSP1SCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=WATERHEATERSP2SCHEDULE_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=BOILER_SETPT_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=DOASHIGHTEMP_wk_
+   ************* Schedule:Week:Daily or Schedule:Week:Compact=DOASLOWTEMP_wk_
+   ** Warning ** The following day schedule names are "Unused Schedules".  These schedules are in the idf
+   **   ~~~   **  file but are never obtained by the simulation and therefore are NOT used.
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=LIGHTINGDAY_EELIGHTING_OCCSENSORS
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=LIGHTINGDAY_EELIGHTING_GARAGE_OCCSENSORS
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=DHW_PROFILE_DAY
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SINKSWEEKDAY
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SINKSWEEKEND
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SINKSVACATION
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SHOWERSWEEKDAY
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SHOWERSWEEKEND
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SHOWERSVACATION
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=BATHSWEEKDAY
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=BATHSWEEKEND
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=BATHSVACATION
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=DHWDISTDAY
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=WINTERLOADDAY
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SUMMERLOADDAY
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SINKSENSSCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SINKLATSCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SHOWERSENSSCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=SHOWERLATSCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=BATHSENSSCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=BATHLATSCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=WATERHEATERSP1SCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=WATERHEATERSP2SCHEDULE_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=BOILER_SETPT_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=DOASHIGHTEMP_dy_
+   ************* Schedule:Day:Hourly or Schedule:Day:Interval or Schedule:Day:List=DOASLOWTEMP_dy_
+   *************
+   ************* ===== Final Error Summary =====
+   ************* The following error categories occurred.  Consider correcting or noting.
+   ************* InterZone Surface Azimuths -- mismatch
+   ************* ..The azimuths (outward facing angle) of two interzone surfaces should not be the same.
+   ************* ..Normally, the absolute difference between the two azimuths will be 180 degrees.
+   ************* ..You can turn on the report: Output:Surfaces:List,Details; to inspect your surfaces.
+   ************* Loads Initialization did not Converge
+   ************* ..1) very high thermal mass such as very thick concrete (solution: increase max number of warmup
+   ************* ..   days in the BUILDING object);
+   ************* ..2) moderate mass and inadequate space conditioning such that the building keeps getting warmer
+   ************* ..   and warmer on successive days (solution: add HVAC, check building thermal properties,
+   ************* ..   check if infiltration is included, make sure HVAC properly controlled);
+   ************* ..3) a soil layer modeled below the concrete slab - (solution remove this layer and read about
+   ************* ..   ground temperatures in the Auxiliary Programs document).
+   ************* ..4) unreasonable (too small) limits in the BUILDING object for temperature (.4 default) or
+   ************* ..   loads tolerances (.04 default)
+   ************* Nominally Unused Constructions
+   ************* ..The nominally unused constructions warning is provided to alert you to potential conditions that can cause
+   ************* ..extra time during simulation. Each construction is calculated by the algorithm indicated in the HeatBalanceAlgorithm
+   ************* ..object. You may remove the constructions indicated (when you use the DisplayExtraWarnings option).
+   *************
+   ************* EnergyPlus Warmup Error Summary. During Warmup: 0 Warning; 31 Severe Errors.
+   ************* EnergyPlus Sizing Error Summary. During Sizing: 8 Warning; 0 Severe Errors.
+   ************* EnergyPlus Completed Successfully-- 111 Warning; 31 Severe Errors; Elapsed Time=00hr 01min 34.35sec

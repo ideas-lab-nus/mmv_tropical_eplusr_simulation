@@ -1,0 +1,1438 @@
+---
+title: "R Notebook"
+# Author: Kazuki Horikoshi
+# Date: 12/9/2024
+# Description: Analyzing NV hours based on increased velocity
+---
+```{r}
+# Load libraries
+```
+
+
+# --------------- Clear your environment --------------
+rm(list = ls())
+
+# ------------------ Preparation -----------------------
+# Preparation: import the libraries
+# Preparation: install libraries if not available
+
+# options(timeout = 2000)
+
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(here)
+library(data.table)
+library(doParallel)
+library(foreach)
+library(scales)
+library(reticulate)
+library(DBI)
+library(RSQLite)
+library(tidyr)
+library(patchwork)
+library(doSNOW)
+library(progress)
+library(RColorBrewer)
+library(akima)
+library(metR)
+library(scales)
+library(grid)
+
+
+# ################
+use_python("/usr/bin/python3", required = TRUE)
+py_config()
+# Load Python library
+pythermalcomfort <- import("pythermalcomfort")
+
+path <- here()
+
+library(eplusr)
+ver <- "9.5.0"
+idd <- use_idd(ver, download = "auto")
+
+# -- Define conversion factors and constants --
+# 1 sq ft = 0.092903 sq m
+AREA_FT2 <- 21609.96
+AREA_M2 <- AREA_FT2 * 0.092903
+KBTU_TO_KWH <- 0.293071
+
+# Display all available color palettes from RColorBrewer for reference
+display.brewer.all()
+# The "Set2" palette has 8 colors. We load them all.
+set2_colors <- brewer.pal(n = 8, name = "Set2")
+# ---- End ----
+
+
+# ---- Set Region Mapping ----
+
+city_climate_mapping <- data.frame(
+  City = c(
+    "Singapore", "KualaLumpur", "SantoDomingo", "Honolulu", "Freetown", "Guam", "Honiara",
+    "Manila", "Dhaka", "Miami", "Jakarta", "Lagos",
+    "Bangkok", "Mumbai", "Chennai", "RioDeJaneiro", "Darwin", "Kolkata", "Bengaluru", "Hyderabad"
+  ),
+  ClimateGroup = c(
+    "Af", "Af", "Am", "Aw", "Am", "Af", "Af",
+    "Am", "Aw", "Am", "Am", "Am",
+    "Aw", "Aw", "Aw", "Aw", "Aw", "Aw", "Aw", "Aw"
+  )
+)
+# ---- End ----
+
+# split Aw group into south asia and others
+south_asian_cities <- c("Mumbai", "Chennai", "Kolkata", "Bengaluru", "Hyderabad", "Dhaka")
+city_climate_mapping <- city_climate_mapping %>%
+  mutate(PlotGroup = case_when(
+    City %in% south_asian_cities ~ "Aw (South Asia)",
+    ClimateGroup == "Aw" ~ "Aw (Other)",
+    TRUE ~ ClimateGroup
+  ))
+
+plot_groups <- c("Af", "Am", "Aw (South Asia)", "Aw (Other)")
+
+combined_groups <- list(
+  "Af+Am" = c("Af", "Am"),
+  "Aw" = c("Aw (South Asia)", "Aw (Other)")
+)
+
+desired_order_afam <- c(
+  "Guam", "Honiara", "KualaLumpur", "Singapore", # Af
+  "Freetown", "Jakarta", "Lagos", "Manila", "Miami", "SantoDomingo" # Am
+)
+
+# Optional order for Aw
+desired_order_aw <- c(
+  "Bangkok", "Mumbai", "Chennai", "RioDeJaneiro", "Darwin",
+  "Kolkata", "Bengaluru", "Hyderabad", "Honolulu", "Dhaka"
+)
+
+# optimal temperature for NV in each city (daytime NV case)
+optimal_temps <- c(
+  Guam = 29, Honiara = 30, KualaLumpur = 29, Singapore = 29, Freetown = 30,
+  Jakarta = 30, Lagos = 30, Manila = 29, Miami = 29, SantoDomingo = 30,
+  Bengaluru = 32, Chennai = 30, Dhaka = 29, Hyderabad = 32, Kolkata = 29,
+  Mumbai = 29, Bangkok = 29, Darwin = 30, Honolulu = 30, RioDeJaneiro = 31
+)
+optimal_temps_df <- stack(optimal_temps)
+colnames(optimal_temps_df) <- c("TargetTemp", "City")
+
+city_temp_list <- tibble::deframe(optimal_temps_df[, c("City", "TargetTemp")])
+
+# Merge climate data and optimal temps
+city_data <- merge(city_climate_mapping, optimal_temps_df, by = "City")
+city_data <- city_data %>%
+  mutate(PlotGroup = case_when(
+    City %in% south_asian_cities ~ "Aw (South Asia)",
+    ClimateGroup == "Aw" ~ "Aw (Other)",
+    TRUE ~ ClimateGroup
+  ))
+# ---- End ----
+
+# epw list
+epw_dict <- list(
+  Bangkok = file.path(
+    "~/localdir/analysis/data/epw/Bangkok/THA_CRG_Bangkok.Metropolis.484550_TMYx.2009-2023",
+    "THA_CRG_Bangkok.Metropolis.484550_TMYx.2009-2023.epw"
+  ),
+  Bengaluru = file.path(
+    "~/localdir/analysis/data/epw/Bengaluru/IND_KA_Bengaluru-Hindustan.AP.432960_TMYx.2004-2018",
+    "IND_KA_Bengaluru-Hindustan.AP.432960_TMYx.2004-2018.epw"
+  ),
+  Chennai = file.path(
+    "~/localdir/analysis/data/epw/Chennai/IND_TN_Chennai.Intl.AP.432790_TMYx.2009-2023",
+    "IND_TN_Chennai.Intl.AP.432790_TMYx.2009-2023.epw"
+  ),
+  Darwin = file.path(
+    "~/localdir/analysis/data/epw/Darwin/AUS_NT_Darwin_Intl_AP_941200_TMYx_2009-2023",
+    "AUS_NT_Darwin_Intl_AP_941200_TMYx_2009-2023.epw"
+  ),
+  Dhaka = file.path(
+    "~/localdir/analysis/data/epw/Dhaka/BGD_DH_Dhaka-Shahjalal.Intl.AP.419220_TMYx.2009-2023",
+    "BGD_DH_Dhaka-Shahjalal.Intl.AP.419220_TMYx.2009-2023.epw"
+  ),
+  Freetown = file.path(
+    "~/localdir/analysis/data/epw/Freetown/SLE_NO_Lungi.Intl.AP.618560_TMYx.2009-2023",
+    "SLE_NO_Lungi.Intl.AP.618560_TMYx.2009-2023.epw"
+  ),
+  Guam = file.path(
+    "~/localdir/analysis/data/epw/Guam/GUM_TM_Tamuning-Won.Pat.Intl.AP.912120_TMYx.2009-2023",
+    "GUM_TM_Tamuning-Won.Pat.Intl.AP.912120_TMYx.2009-2023.epw"
+  ),
+  Honiara = file.path(
+    "~/localdir/analysis/data/epw/Honiara/SLB_GU_Honiara.Intl.AP.915200_TMYx.2009-2023",
+    "SLB_GU_Honiara.Intl.AP.915200_TMYx.2009-2023.epw"
+  ),
+  Honolulu = file.path(
+    "~/localdir/analysis/data/epw/Honolulu/USA_HI_Honolulu-Inouye.Intl.AP.Oahu.911820_TMYx.2009-2023",
+    "USA_HI_Honolulu-Inouye.Intl.AP.Oahu.911820_TMYx.2009-2023.epw"
+  ),
+  Hyderabad = file.path(
+    "~/localdir/analysis/data/epw/Hyderabad/IND_TG_Hyderabad-Gandhi.Intl.AP.431285_TMYx.2009-2023",
+    "IND_TG_Hyderabad-Gandhi.Intl.AP.431285_TMYx.2009-2023.epw"
+  ),
+  Jakarta = file.path(
+    "~/localdir/analysis/data/epw/Jakarta/IDN_JW_Jakarta-Soekarno-Hatta.Intl.AP.967490_TMYx.2009-2023",
+    "IDN_JW_Jakarta-Soekarno-Hatta.Intl.AP.967490_TMYx.2009-2023.epw"
+  ),
+  Kinshasa = file.path(
+    "~/localdir/analysis/data/epw/Kinshasa/COD_KN_Kinshasa-Ndjili.Intl.AP.642100_TMYx.2009-2023",
+    "COD_KN_Kinshasa-Ndjili.Intl.AP.642100_TMYx.2009-2023.epw"
+  ),
+  Kolkata = file.path(
+    "~/localdir/analysis/data/epw/Kolkata/IND_WB_Kolkata-Bose.Intl.AP.428090_TMYx.2009-2023",
+    "IND_WB_Kolkata-Bose.Intl.AP.428090_TMYx.2009-2023.epw"
+  ),
+  KualaLumpur = file.path(
+    "~/localdir/analysis/data/epw/KualaLumpur/MYS_KL_Kuala.Lumpur-Subang-Abdul.Aziz.Shah.Intl.AP.486470_TMYx.2009-2023",
+    "MYS_KL_Kuala.Lumpur-Subang-Abdul.Aziz.Shah.Intl.AP.486470_TMYx.2009-2023.epw"
+  ),
+  Lagos = file.path(
+    "~/localdir/analysis/data/epw/Lagos/NGA_LA_Lagos-Muhammed.Intl.AP.652010_TMYx.2009-2023",
+    "NGA_LA_Lagos-Muhammed.Intl.AP.652010_TMYx.2009-2023.epw"
+  ),
+  Manila = file.path(
+    "~/localdir/analysis/data/epw/Manila/PHL_NCR_Manila.984250_TMYx.2009-2023",
+    "PHL_NCR_Manila.984250_TMYx.2009-2023.epw"
+  ),
+  Miami = file.path(
+    "~/localdir/analysis/data/epw/Miami/USA_FL_Miami.Intl.AP.722020_US.Normals.2006-2020",
+    "USA_FL_Miami.Intl.AP.722020_US.Normals.2006-2020.epw"
+  ),
+  Mumbai = file.path(
+    "~/localdir/analysis/data/epw/Mumbai/IND_MH_Mumbai-Shivaji.Intl.AP.430030_TMYx.2009-2023",
+    "IND_MH_Mumbai-Shivaji.Intl.AP.430030_TMYx.2009-2023.epw"
+  ),
+  RioDeJaneiro = file.path(
+    "~/localdir/analysis/data/epw/RioDeJaneiro/BRA_RJ_Rio.de.Janeiro-Galeao-Jobim.Intl.AP.837460_TMYx.2009-2023",
+    "BRA_RJ_Rio.de.Janeiro-Galeao-Jobim.Intl.AP.837460_TMYx.2009-2023.epw"
+  ),
+  SantoDomingo = file.path(
+    "~/localdir/analysis/data/epw/SantoDomingo/DOM_NC_Santo.Domingo.784860_TMYx.2009-2023",
+    "DOM_NC_Santo.Domingo.784860_TMYx.2009-2023.epw"
+  ),
+  Singapore = file.path(
+    "~/localdir/analysis/data/epw/Singapore/SGP_SINGAPORE-CHANGI-IAP_486980S_23",
+    "SGP_SINGAPORE-CHANGI-IAP_486980S_23.epw"
+  )
+)
+# ---- End ----
+
+# Loading settings file
+source("config.R")
+
+```{r}
+# Calculate Lower Threshold(No need to run everytime)
+```
+
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- # 1. Define Calculation Formula for Adaptive Comfort -->
+<!-- # Formula: Tlow = 0.31 * Tout_mean + 17.8 - 3.5 -->
+<!-- # (0.5 * 7 = 3.5 for the lower boundary of the 80% acceptability limit) -->
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- calculate_tlow <- function(tout_mean) { -->
+<!--   return(0.31 * tout_mean + 14.3) -->
+<!-- } -->
+
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- # 2. Extract and Calculate Monthly Data for All Cities -->
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- summary_list <- imap(epw_dict, function(path, city_name) { -->
+
+<!--   # EPW hourly data starts at line 9 (skip first 8 header lines) -->
+<!--   # Column 2 = Month, Column 7 = Dry Bulb Temperature (Celsius) -->
+<!--   # We use data.table::fread for high-speed, direct reading -->
+<!--   epw_raw <- data.table::fread(path, skip = 8, header = FALSE) -->
+
+<!--   # Extract relevant columns and rename for clarity -->
+<!--   # V2 is Month, V7 is Dry Bulb Temp -->
+<!--   monthly_stats <- epw_raw[, .( -->
+<!--     Mean_Tout = mean(V7) -->
+<!--   ), by = .(month = V2)] -->
+
+<!--   # Compute the corresponding Tlow for each month -->
+<!--   monthly_stats[, `:=`( -->
+<!--     City = city_name, -->
+<!--     Tlow = calculate_tlow(Mean_Tout) -->
+<!--   )] -->
+
+<!--   return(monthly_stats) -->
+<!-- }) -->
+
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- # 3. Combine All Results into a Single Dataframe -->
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- all_city_tlow_df <- bind_rows(summary_list) %>% -->
+<!--   select(City, month, Mean_Tout, Tlow) -->
+
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- # 4. Convert to "Wide" Format for Publication/Report -->
+<!-- # Reshaping so that each month (1-12) becomes a column -->
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- tlow_table_wide <- all_city_tlow_df %>% -->
+<!--   select(City, month, Tlow) %>% -->
+<!--   mutate(Tlow = round(Tlow, 2)) %>% -->
+<!--   pivot_wider( -->
+<!--     names_from = month,  -->
+<!--     names_prefix = "Month_",  -->
+<!--     values_from = Tlow -->
+<!--   ) -->
+
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- # 5. Export to CSV -->
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- output_csv <- "Monthly_Tlow_Summary_All_Cities.csv" -->
+<!-- write.csv(tlow_table_wide, output_csv, row.names = FALSE) -->
+
+<!-- cat(sprintf("\n[Success] Monthly lower limit temperatures summarized and saved to: %s\n", output_csv)) -->
+
+
+```{r}
+# E+ function with low-outdoor temp threshold as variable
+```
+<!-- # NV Analysis Pipeline -->
+<!-- # Part 1: Run EnergyPlus Simulation with Varying MaxOutdoorTemp -->
+
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- # Helper Function: Build ERL string for monthly Tlow logic -->
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- build_monthly_tlow_text <- function(city_name, tlow_df) { -->
+<!--   city_row <- tlow_df[tlow_df$City == city_name, ] -->
+
+<!--   lines <- c( -->
+<!--     "", -->
+<!--     "EnergyManagementSystem:Program,", -->
+<!--     "    CalculateMonthlyTlow,    !- Name", -->
+<!--     "    SET CurrentMonth = Month,!- Program Line 1" -->
+<!--   ) -->
+
+<!--   for (m in 1:12) { -->
+<!--     val <- city_row[[paste0("Month_", m)]] -->
+<!--     prefix <- if (m == 1) "IF" else "ELSEIF" -->
+<!--     lines <- c(lines, sprintf("    %s CurrentMonth == %d, SET Tlow_Current = %.2f,", prefix, m, val)) -->
+<!--   } -->
+
+<!--   lines <- c(lines, "    ENDIF;                   !- End", "") -->
+<!--   return(paste(lines, collapse = "\n")) -->
+<!-- } -->
+
+<!-- # ------------------------------------------------------------------------------ -->
+<!-- # Helper Function:TEXT REPLACEMENT FUNCTION -->
+<!-- # ------------------------------------------------------------------------------ -->
+
+<!-- # ---- replace_ems_if_line_in_idf ---------------------------------------------- -->
+<!-- # Purpose: -->
+<!-- #   Replace ONLY "Program Line 1" (IF line) for a given EMS Program by plain text. -->
+<!-- # How it works: -->
+<!-- #   - Finds block that starts with: EnergyManagementSystem:Program, <ProgramName> -->
+<!-- # Notes: -->
+<!-- #   - Keeps the comma at the end, preserves other lines as-is. -->
+<!-- #   - Backup is created automatically: <file_out>.bak -->
+<!-- replace_ems_with_dynamic_logic <- function(file_path, program_name, cond_expr) { -->
+<!--   txt <- readLines(file_path, warn = FALSE) -->
+
+<!--   start_pat <- "^\\s*EnergyManagementSystem:Program\\s*,\\s*$" -->
+<!--   name_pat  <- paste0("^\\s*", gsub("([\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\.\\|\\\\])", "\\\\\\1", program_name), "\\s*,") -->
+
+<!--   n <- length(txt); i <- 1L; found <- FALSE -->
+<!--   while (i <= n) { -->
+<!--     if (grepl(start_pat, txt[i], ignore.case = TRUE)) { -->
+<!--       j <- i + 1L -->
+<!--       while (j <= n && grepl("^\\s*$", txt[j])) j <- j + 1L  -->
+<!--       if (j <= n && grepl(name_pat, txt[j], ignore.case = TRUE)) { -->
+<!--         # 以前成功した手法に基づき、Program Line 1と2を書き換える -->
+<!--         # RUN命令と新しいIF条件を確実に挿入 -->
+<!--         txt[j + 1] <- "    RUN CalculateMonthlyTlow," -->
+<!--         txt[j + 2] <- paste0("    IF ", cond_expr, ",") -->
+<!--         found <- TRUE; break -->
+<!--       } -->
+<!--     } -->
+<!--     i <- i + 1L -->
+<!--   } -->
+<!--   writeLines(txt, file_path) -->
+<!-- } -->
+
+
+<!-- # ---- End replace_ems_if_line_in_idf ---- -->
+
+<!-- remove_ems_program_from_text <- function(txt, program_name) { -->
+<!--   start_pat <- "^\\s*EnergyManagementSystem:Program\\s*,\\s*$" -->
+<!--   name_pat  <- paste0("^\\s*", gsub("([\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\.\\|\\\\])", "\\\\\\1", program_name), "\\s*,") -->
+
+<!--   n <- length(txt); i <- 1L -->
+<!--   new_txt <- list() -->
+
+<!--   while (i <= n) { -->
+<!--     # Programの開始行を見つけた場合 -->
+<!--     if (grepl(start_pat, txt[i], ignore.case = TRUE)) { -->
+<!--       j <- i + 1L -->
+<!--       while (j <= n && grepl("^\\s*$", txt[j])) j <- j + 1L # 空行スキップ -->
+
+<!--       # 名前が一致するか確認 -->
+<!--       if (j <= n && grepl(name_pat, txt[j], ignore.case = TRUE)) { -->
+<!--         # セミコロンが見つかるまで行をスキップ（削除対象） -->
+<!--         k <- j -->
+<!--         while (k <= n && !grepl(";", txt[k])) k <- k + 1L -->
+<!--         i <- k + 1L # ポインタを削除範囲の次に進める -->
+<!--         next -->
+<!--       } -->
+<!--     } -->
+<!--     new_txt <- c(new_txt, txt[i]) -->
+<!--     i <- i + 1L -->
+<!--   } -->
+<!--   return(as.character(new_txt)) -->
+<!-- } -->
+
+<!-- # ============================================================================== -->
+<!-- # 3. MAIN SIMULATION FUNCTION -->
+<!-- # ============================================================================== -->
+<!-- run_energyplus_nv_with_tlow <- function(country_name, epw_path, idf_template_path, tlow_df,  -->
+<!--                                         natvent_list, hybridvent_list,  -->
+<!--                                         save_dir_root = here::here("R.Data"),  -->
+<!--                                         max_outdoor_range = 27:32, overwrite = FALSE) { -->
+
+<!--   ver <- "9.5.0"; idd <- eplusr::use_idd(ver, download = "auto") -->
+
+<!--   for (max_outdoor in max_outdoor_range) { -->
+<!--     case_label <- paste0("MaxOutdoor_", max_outdoor) -->
+<!--     path_cal <- file.path("data", "idf", "12.cals", country_name, case_label) -->
+<!--     if (!dir.exists(path_cal)) dir.create(path_cal, recursive = TRUE) -->
+
+<!--     model_path <- file.path(path_cal, "model_updated.idf") -->
+<!--     if (file.exists(model_path) && !overwrite) next -->
+
+<!--     # --- Step A: テキスト読み込みとクリーニング --- -->
+<!--     idf_text <- readLines(idf_template_path, warn = FALSE) -->
+
+<!--     # 既存の CalculateMonthlyTlow があれば一旦消す（重複防止） -->
+<!--     idf_text <- remove_ems_program_from_text(idf_text, "CalculateMonthlyTlow") -->
+
+<!--     # CalculateMonthlyTlowを生成して追加 -->
+<!--     new_prog <- build_monthly_tlow_text(country_name, tlow_df) -->
+<!--     idf_text <- c(idf_text, new_prog) -->
+
+<!--     # GlobalVariableのチェックと追加（既に無ければ足す） -->
+<!--     if (!any(grepl("TLOW_CURRENT", idf_text, ignore.case = TRUE))) { -->
+<!--       idf_text <- c(idf_text, "\nEnergyManagementSystem:GlobalVariable,\n    TLOW_CURRENT; !- Variable Name\n") -->
+<!--     } -->
+
+<!--     writeLines(idf_text, model_path) -->
+
+<!--     # --- Step B: eplusr で閾値を個別に更新（安定版） --- -->
+<!--     idf <- eplusr::read_idf(model_path, idd = idd) -->
+
+<!--     for (name in natvent_list) { -->
+<!--       if (idf$is_valid_name(name)) { -->
+<!--         idf$object(name)$set(Minimum_Outdoor_Temperature = 10, Maximum_Outdoor_Temperature = max_outdoor) -->
+<!--       } -->
+<!--     } -->
+<!--     for (name in hybridvent_list) { -->
+<!--       if (idf$is_valid_name(name)) { -->
+<!--         idf$object(name)$set(Minimum_Outdoor_Temperature = 10, Maximum_Outdoor_Temperature = max_outdoor) -->
+<!--       } -->
+<!--     } -->
+
+<!--     idf$save(model_path, overwrite = TRUE) -->
+
+<!--     # --- Step C: メインIF文の置換（以前成功した方式） --- -->
+<!--     nv_cond <- sprintf("(NV_Enable_SchedVal == 1) && (OUTDOORTEMP < %.1f) && (OUTDOORTEMP > Tlow_Current) && (WindSpeed_Sensor <= 10) && (Rain_Sensor == 0)", max_outdoor) -->
+
+<!--     # ここも replace_ems_with_dynamic_logic を使用 -->
+<!--     replace_ems_with_dynamic_logic(model_path, "AdjustCoolSetpoint", nv_cond) -->
+<!--     replace_ems_with_dynamic_logic(model_path, "AdjustAllListedWindows_Program", nv_cond) -->
+
+<!--     # --- Step D: 実行 --- -->
+<!--     cat("[Run] Simulation starting for:", country_name, case_label, "\n") -->
+<!--     final_model <- eplusr::read_idf(model_path, idd = idd) -->
+<!--     final_model$run(weather = epw_path, dir = path_cal, wait = TRUE) -->
+<!--   } -->
+<!-- } -->
+
+
+<!-- ## Setting epw data link and Run E+ -->
+
+<!-- # ---- epw data link configuration ---- -->
+
+<!-- <!-- path_idf <- file.path("data", "idf", "11.setting_edit", "250812_DaytimeOnlyNV", "model_preprocessed.idf") --> -->
+
+<!-- path_idf_template <- file.path("data", "idf", "11.setting_edit", "260107_FlexibleLowerThreshold", "model_preprocessed.idf") -->
+
+<!-- # ---- End ---- -->
+
+<!-- # SG case -->
+<!-- path_singapore <- epw_dict[["Singapore"]] -->
+
+<!-- cat("\n=== Running simulation for: Singapore ===\n") -->
+<!-- run_energyplus_nv_with_tlow( -->
+<!--     country_name = "Singapore", -->
+<!--     epw_path = path_singapore, -->
+<!--     idf_template_path = path_idf_template, -->
+<!--     tlow_df = tlow_master_df,  # Use the pre-loaded Tlow CSV data -->
+<!--     max_outdoor_range = 27:32, -->
+<!--     overwrite = FALSE, -->
+<!--     natvent_list=natvent_list, -->
+<!--     hybridvent_list=hybridvent_list -->
+<!--   ) -->
+
+<!-- # ---- End ---- -->
+
+```{r}
+# Run E+ With fixed lower threshold
+```
+
+replace_ems_if_line_in_idf <- function(file_in, file_out, program_name, cond_expr) {
+  # read
+  txt <- readLines(file_in, warn = FALSE)
+  # backup
+  if (file.exists(file_out)) {
+    file.copy(file_out, paste0(file_out, ".bak"), overwrite = TRUE)
+  }
+
+  # patterns (strict but simple)
+  start_pat <- paste0("^\\s*EnergyManagementSystem:Program\\s*,\\s*$")
+  name_pat <- paste0(
+    "^\\s*",
+    gsub("([\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\.\\|\\\\])", "\\\\\\1", program_name),
+    "\\s*,\\s*(?:!-.*)?$"
+  )
+
+  n <- length(txt)
+  i <- 1L
+  found <- FALSE
+  replaced <- FALSE
+
+  while (i <= n) {
+    # find "EnergyManagementSystem:Program," line
+    if (grepl(start_pat, txt[i])) {
+      # next non-empty must be the Name line
+      j <- i + 1L
+      while (j <= n && grepl("^\\s*$", txt[j])) j <- j + 1L
+      if (j <= n && grepl(name_pat, txt[j])) {
+        found <- TRUE
+        # find next non-empty (Program Line 1)
+        k <- j + 1L
+        while (k <= n && grepl("^\\s*$", txt[k])) k <- k + 1L
+        if (k <= n) {
+          # build new IF line with trailing comma
+          new_line <- paste0("    IF ", cond_expr, ",")
+          txt[k] <- new_line
+          replaced <- TRUE
+        }
+        # Exit after finding one program (assuming no duplicate names)
+        break
+      }
+    }
+    i <- i + 1L
+  }
+
+  if (!found) stop(sprintf("Program '%s' was not found in IDF text.", program_name))
+  if (!replaced) stop(sprintf("Program '%s' IF line could not be replaced.", program_name))
+
+  writeLines(txt, file_out, useBytes = TRUE)
+  invisible(TRUE)
+}
+
+# replace_ems_if_and_set_in_idf
+# ----
+replace_ems_if_and_set_in_idf <- function(file_in, file_out, program_name, cond_expr,
+                                         set_var = NULL, set_value = NULL) {
+  txt <- readLines(file_in, warn = FALSE)
+  if (file.exists(file_out)) file.copy(file_out, paste0(file_out, ".bak"), overwrite = TRUE)
+
+  start_pat <- "^\\s*EnergyManagementSystem:Program\\s*,\\s*(?:!-.*)?$"
+  name_pat <- paste0("^\\s*",
+                     gsub("([\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\.\\|\\\\])", "\\\\\\1", program_name),
+                     "\\s*,\\s*(?:!-.*)?$")
+  if_pat <- "^\\s*IF\\b"
+  set_pat <- if (!is.null(set_var)) paste0("^\\s*SET\\s+", gsub("([\\^\\$\\*\\+\\?\\(\\)\\[\\]\\{\\}\\.\\|\\\\])", "\\\\\\1", set_var), "\\s*=") else NULL
+
+  n <- length(txt)
+  i <- 1L
+  found <- FALSE
+  replaced_if <- FALSE
+  replaced_set <- FALSE
+
+  while (i <= n) {
+    if (grepl(start_pat, txt[i])) {
+      j <- i + 1L
+      while (j <= n && grepl("^\\s*$", txt[j])) j <- j + 1L
+
+      if (j <= n && grepl(name_pat, txt[j])) {
+        found <- TRUE
+
+        # define block end (line containing ';')
+        end <- j + 1L
+        while (end <= n && !grepl(";", txt[end])) end <- end + 1L
+        if (end > n) stop(sprintf("Program '%s' block end ';' not found.", program_name))
+
+        # scan within block
+        k <- j + 1L
+        while (k <= end) {
+          if (!replaced_if && grepl(if_pat, txt[k])) {
+            txt[k] <- paste0("    IF ", cond_expr, ",")
+            replaced_if <- TRUE
+          } else if (!is.null(set_pat) && !replaced_set && grepl(set_pat, txt[k])) {
+            # keep trailing comment if any
+            comment <- sub("^.*?(\\s*!-.*)$", "\\1", txt[k])
+            has_comment <- grepl("!-", txt[k])
+            new_set <- paste0("    SET ", set_var, " = ", sprintf("%.1f", set_value), ",")
+            txt[k] <- if (has_comment) paste0(new_set, "  ", comment) else new_set
+            replaced_set <- TRUE
+          }
+          k <- k + 1L
+        }
+        break
+      }
+    }
+    i <- i + 1L
+  }
+
+  if (!found) stop(sprintf("Program '%s' was not found in IDF text.", program_name))
+  if (!replaced_if) stop(sprintf("Program '%s' IF line could not be replaced.", program_name))
+  if (!is.null(set_pat) && !replaced_set) stop(sprintf("Program '%s' SET line for '%s' not found.", program_name, set_var))
+
+  writeLines(txt, file_out, useBytes = TRUE)
+  invisible(TRUE)
+}
+# ---- End ----
+
+# ---- NV function definition ----
+## Purpose:
+##   Update NV/HV thresholds and rewrite EMS to use:
+##   (NV_Enable_SchedVal == 1) AND (OutdoorTemp < MaxOutdoorTemp)
+##   AND (WindSpeed_Sensor <= MaxWindSpeed) AND (Rain_Sensor == 0)
+##   for both setpoint switching and window actuation.
+## Notes:
+##   - Keeps your existing Open/Close lines in the windows program; only fixes IF line.
+##   - No hysteresis in this version.
+run_energyplus_nv <- function(country_name,
+                              epw_path,
+                              idf_template_path,
+                              save_dir_root = here::here("R.Data"),
+                              max_outdoor_range = 27:32,
+                              overwrite = FALSE) {
+
+  ver <- "9.5.0"
+  idd <- eplusr::use_idd(ver, download = "auto")
+
+# Object names (unchanged)
+natvent_list <- c(
+  "NatVent_unit1_FrontRow_BottomFloor", "NatVent_unit2_FrontRow_BottomFloor", "NatVent_unit3_FrontRow_BottomFloor",
+  "NatVent_unit1_BackRow_BottomFloor", "NatVent_unit2_BackRow_BottomFloor", "NatVent_unit3_BackRow_BottomFloor",
+  "NatVent_unit1_FrontRow_MiddleFloor", "NatVent_unit2_FrontRow_MiddleFloor", "NatVent_unit3_FrontRow_MiddleFloor",
+  "NatVent_unit1_BackRow_MiddleFloor", "NatVent_unit2_BackRow_MiddleFloor", "NatVent_unit3_BackRow_MiddleFloor",
+  "NatVent_unit1_FrontRow_TopFloor", "NatVent_unit2_FrontRow_TopFloor", "NatVent_unit3_FrontRow_TopFloor",
+  "NatVent_unit1_BackRow_TopFloor", "NatVent_unit2_BackRow_TopFloor", "NatVent_unit3_BackRow_TopFloor"
+)
+
+hybridvent_list <- c(
+  "HybridVentilation_Control_unit1_FrontRow_BottomFloor", "HybridVentilation_Control_unit2_FrontRow_BottomFloor", "HybridVentilation_Control_unit3_FrontRow_BottomFloor",
+  "HybridVentilation_Control_unit1_BackRow_BottomFloor", "HybridVentilation_Control_unit2_BackRow_BottomFloor", "HybridVentilation_Control_unit3_BackRow_BottomFloor",
+  "HybridVentilation_Control_unit1_FrontRow_MiddleFloor", "HybridVentilation_Control_unit2_FrontRow_MiddleFloor", "HybridVentilation_Control_unit3_FrontRow_MiddleFloor",
+  "HybridVentilation_Control_unit1_BackRow_MiddleFloor", "HybridVentilation_Control_unit2_BackRow_MiddleFloor", "HybridVentilation_Control_unit3_BackRow_MiddleFloor",
+  "HybridVentilation_Control_unit1_FrontRow_TopFloor", "HybridVentilation_Control_unit2_FrontRow_TopFloor", "HybridVentilation_Control_unit3_FrontRow_TopFloor",
+  "HybridVentilation_Control_unit1_BackRow_TopFloor", "HybridVentilation_Control_unit2_BackRow_TopFloor", "HybridVentilation_Control_unit3_BackRow_TopFloor"
+)
+
+  for (max_outdoor in max_outdoor_range) {
+    case_label <- paste0("MaxOutdoor_", max_outdoor)
+    path_cal <- file.path("data", "idf", "12.cals", country_name, case_label)
+    if (!dir.exists(path_cal)) dir.create(path_cal, recursive = TRUE)
+
+    model_path <- file.path(path_cal, "model_updated.idf")
+    if (file.exists(model_path) && !overwrite) {
+      cat("[Skip] Simulation already exists for:", case_label, "\n")
+      next
+    }
+
+    # --- Step 1: copy template to working file (overwrite this case) ------------
+    file.copy(idf_template_path, model_path, overwrite = TRUE)
+
+    # --- Step 2: replace ONLY EMS IF line by text (no eplusr object ops) -------
+    max_wind_speed <- 10
+    max_indoor_temp <- max_outdoor + 5
+    cond_expr <- sprintf(
+      "(NV_Enable_SchedVal == 1) && (OUTDOORTEMP < %.1f) && (WindSpeed_Sensor <= %.1f) && (Rain_Sensor == 0)",
+      max_outdoor, max_wind_speed
+    )
+    replace_ems_if_and_set_in_idf(
+      model_path, model_path,
+      program_name = "AdjustCoolSetpoint",
+      cond_expr = cond_expr,
+      set_var = "ThermostatCoolSet_Actuator",
+      set_value = max_indoor_temp
+    )
+    
+    replace_ems_if_and_set_in_idf(
+      model_path, model_path,
+      program_name = "AdjustAllListedWindows_Program",
+      cond_expr = cond_expr
+    )
+
+    # --- Step 3: open via eplusr, update thresholds as before -------------------
+    idf <- eplusr::read_idf(model_path, idd = idd)
+
+    min_outdoor_temp <- 20
+    max_outdoor_temp <- max_outdoor
+    min_indoor_temp <- 20
+    max_indoor_temp <- max_outdoor + 5
+    # max_wind_speed already set (10)
+    min_outdoor_ent <- 1000
+    max_outdoor_ent <- 100000
+    min_outdoor_dew <- 10
+    max_outdoor_dew <- 30
+
+    # ZoneVentilation thresholds (your original indexing method)
+    for (name in natvent_list) {
+      tmp <- idf$`ZoneVentilation:DesignFlowRate`[[name]]
+      dt <- data.table::rbindlist(c(
+        list(tmp$to_table()),
+        lapply(tmp$ref_to_object(), function(x) x$to_table())
+      ))
+      dt[16, 6] <- min_indoor_temp
+      dt[18, 6] <- max_indoor_temp
+      dt[22, 6] <- min_outdoor_temp
+      dt[24, 6] <- max_outdoor_temp
+      dt[26, 6] <- max_wind_speed
+      idf$update(dt)
+    }
+
+    # HybridVentilation thresholds (your original indexing method)
+    for (name in hybridvent_list) {
+      tmp <- idf$`AvailabilityManager:HybridVentilation`[[name]]
+      dt <- data.table::rbindlist(c(
+        list(tmp$to_table()),
+        lapply(tmp$ref_to_object(), function(x) x$to_table())
+      ))
+      dt[7, 6] <- min_outdoor_temp
+      dt[8, 6] <- max_outdoor_temp
+      dt[9, 6] <- min_outdoor_ent
+      dt[10, 6] <- max_outdoor_ent
+      dt[6, 6] <- max_wind_speed
+      dt[11, 6] <- min_outdoor_dew
+      dt[12, 6] <- max_outdoor_dew
+      idf$update(dt)
+    }
+
+    # --- Step 4: save & run -----------------------------------------------------
+    eplusr::with_silent(idf$save(model_path, overwrite = TRUE))
+    cat("[Run] Starting simulation for:", case_label, "\n")
+    model <- eplusr::read_idf(model_path, idd = idd)
+    invisible(model$run(weather = epw_path, dir = path_cal, wait = TRUE))
+  }
+}
+# ---- End run_energyplus_nv ----
+
+# ---- epw data link configuration ----
+
+path_idf <- file.path("data", "idf", "11.setting_edit", "250812_DaytimeOnlyNV", "model_preprocessed.idf")
+
+# ---- End ----
+
+# SG case
+path_singapore <- epw_dict[["Singapore"]]
+
+run_energyplus_nv(
+  country_name = "Singapore",
+  epw_path = path_singapore,
+  idf_template_path = path_idf,
+  save_dir_root = here::here("R.Data"),
+  max_outdoor_range = 28:32,
+  overwrite = FALSE
+)
+
+# City-loop case
+for (city in names(epw_dict)) {
+  epw_path <- epw_dict[[city]]
+  cat("\n=== Running simulation for:", city, "===\n")
+  run_energyplus_nv(
+    country_name = city,
+    epw_path = epw_path,
+    idf_template_path = path_idf,
+    save_dir_root = here("R.Data"),
+    max_outdoor_range = 27:32,
+    overwrite = FALSE
+  )
+}
+
+# ---- End ----
+
+```{r}
+# e+ parallel calculation
+```
+natvent_list <- c(
+  "NatVent_unit1_FrontRow_BottomFloor", "NatVent_unit2_FrontRow_BottomFloor", "NatVent_unit3_FrontRow_BottomFloor",
+  "NatVent_unit1_BackRow_BottomFloor", "NatVent_unit2_BackRow_BottomFloor", "NatVent_unit3_BackRow_BottomFloor",
+  "NatVent_unit1_FrontRow_MiddleFloor", "NatVent_unit2_FrontRow_MiddleFloor", "NatVent_unit3_FrontRow_MiddleFloor",
+  "NatVent_unit1_BackRow_MiddleFloor", "NatVent_unit2_BackRow_MiddleFloor", "NatVent_unit3_BackRow_MiddleFloor",
+  "NatVent_unit1_FrontRow_TopFloor", "NatVent_unit2_FrontRow_TopFloor", "NatVent_unit3_FrontRow_TopFloor",
+  "NatVent_unit1_BackRow_TopFloor", "NatVent_unit2_BackRow_TopFloor", "NatVent_unit3_BackRow_TopFloor"
+)
+
+hybridvent_list <- c(
+  "HybridVentilation_Control_unit1_FrontRow_BottomFloor", "HybridVentilation_Control_unit2_FrontRow_BottomFloor", "HybridVentilation_Control_unit3_FrontRow_BottomFloor",
+  "HybridVentilation_Control_unit1_BackRow_BottomFloor", "HybridVentilation_Control_unit2_BackRow_BottomFloor", "HybridVentilation_Control_unit3_BackRow_BottomFloor",
+  "HybridVentilation_Control_unit1_FrontRow_MiddleFloor", "HybridVentilation_Control_unit2_FrontRow_MiddleFloor", "HybridVentilation_Control_unit3_FrontRow_MiddleFloor",
+  "HybridVentilation_Control_unit1_BackRow_MiddleFloor", "HybridVentilation_Control_unit2_BackRow_MiddleFloor", "HybridVentilation_Control_unit3_BackRow_MiddleFloor",
+  "HybridVentilation_Control_unit1_FrontRow_TopFloor", "HybridVentilation_Control_unit2_FrontRow_TopFloor", "HybridVentilation_Control_unit3_FrontRow_TopFloor",
+  "HybridVentilation_Control_unit1_BackRow_TopFloor", "HybridVentilation_Control_unit2_BackRow_TopFloor", "HybridVentilation_Control_unit3_BackRow_TopFloor"
+)
+
+# run_energyplus_nv_case
+# ----
+run_energyplus_nv_case <- function(country_name, epw_path, idf_template_path,
+                                  max_outdoor, natvent_list, hybridvent_list,
+                                  overwrite = FALSE) {
+  ver <- "9.5.0"
+  idd <- eplusr::use_idd(ver, download = "auto")
+
+  case_label <- paste0("MaxOutdoor_", max_outdoor)
+  path_cal <- file.path("data", "idf", "12.cals", country_name, case_label)
+  if (!dir.exists(path_cal)) dir.create(path_cal, recursive = TRUE)
+
+  model_path <- file.path(path_cal, "model_updated.idf")
+  if (file.exists(model_path) && !overwrite)
+    return(list(country = country_name, max_outdoor = max_outdoor, status = "skip", dir = path_cal))
+
+  file.copy(idf_template_path, model_path, overwrite = TRUE)
+
+  max_wind_speed <- 10
+  cond_expr <- sprintf("(NV_Enable_SchedVal == 1) && (OUTDOORTEMP < %.1f) && (WindSpeed_Sensor <= %.1f) && (Rain_Sensor == 0)",
+                       max_outdoor, max_wind_speed)
+
+  max_indoor_temp <- max_outdoor + 5
+  replace_ems_if_and_set_in_idf(model_path, model_path, "AdjustCoolSetpoint",
+                                cond_expr, set_var = "ThermostatCoolSet_Actuator", set_value = max_indoor_temp)
+  replace_ems_if_and_set_in_idf(model_path, model_path, "AdjustAllListedWindows_Program", cond_expr)
+
+  idf <- eplusr::read_idf(model_path, idd = idd)
+
+  min_outdoor_temp <- 20; max_outdoor_temp <- max_outdoor
+  min_indoor_temp <- 20; max_indoor_temp2 <- max_outdoor + 5
+  min_outdoor_ent <- 1000; max_outdoor_ent <- 100000
+  min_outdoor_dew <- 10; max_outdoor_dew <- 30
+
+  for (name in natvent_list) {
+    tmp <- idf$`ZoneVentilation:DesignFlowRate`[[name]]
+    dt <- data.table::rbindlist(c(list(tmp$to_table()), lapply(tmp$ref_to_object(), function(x) x$to_table())))
+    dt[16, 6] <- min_indoor_temp; dt[18, 6] <- max_indoor_temp2
+    dt[22, 6] <- min_outdoor_temp; dt[24, 6] <- max_outdoor_temp
+    dt[26, 6] <- max_wind_speed
+    idf$update(dt)
+  }
+
+  for (name in hybridvent_list) {
+    tmp <- idf$`AvailabilityManager:HybridVentilation`[[name]]
+    dt <- data.table::rbindlist(c(list(tmp$to_table()), lapply(tmp$ref_to_object(), function(x) x$to_table())))
+    dt[7, 6] <- min_outdoor_temp; dt[8, 6] <- max_outdoor_temp
+    dt[9, 6] <- min_outdoor_ent; dt[10, 6] <- max_outdoor_ent
+    dt[6, 6] <- max_wind_speed
+    dt[11, 6] <- min_outdoor_dew; dt[12, 6] <- max_outdoor_dew
+    idf$update(dt)
+  }
+
+  eplusr::with_silent(idf$save(model_path, overwrite = TRUE))
+  model <- eplusr::read_idf(model_path, idd = idd)
+  invisible(model$run(weather = epw_path, dir = path_cal, wait = TRUE))
+
+  list(country = country_name, max_outdoor = max_outdoor, status = "done", dir = path_cal)
+}
+# ---- End ----
+
+# --- 1) cluster once (outside the city loop) ---
+num_cores <- parallel::detectCores() - 1
+if (num_cores < 1) num_cores <- 1
+cl <- makeCluster(num_cores)
+registerDoSNOW(cl)
+
+# export once
+clusterExport(cl, varlist = c(
+  "epw_dict", "path_idf",
+  "natvent_list", "hybridvent_list",
+  "replace_ems_if_and_set_in_idf",
+  "run_energyplus_nv_case"
+), envir = environment())
+
+# --- 2) city loop (sequential), inside: parallel over max_outdoor ---
+for (city in names(epw_dict)) {
+  cat("\n=== Running simulation for:", city, "===\n")
+
+  # optional progress bar per city
+  pb <- txtProgressBar(max = length(27:32), style = 3)
+  pcount <- 0
+  opts <- list(progress = function(n) {pcount <<- pcount + 1; setTxtProgressBar(pb, pcount)})
+
+  res_city <- foreach(max_outdoor = 27:32,
+                    .packages = c("eplusr", "data.table", "here"),
+                    .errorhandling = "pass") %dopar% {
+  run_energyplus_nv_case(
+    country_name = city,
+    epw_path = epw_dict[[city]],
+    idf_template_path = path_idf,
+    max_outdoor = max_outdoor,
+    natvent_list = natvent_list,
+    hybridvent_list = hybridvent_list,
+    overwrite = FALSE
+    )
+  }
+
+  close(pb)
+  print(res_city)
+}
+
+# --- 3) stop cluster ---
+stopCluster(cl)
+
+
+```{r}
+# PMV calculation function
+```
+
+<!-- # Vectorizing PMV calculation -->
+<!-- py_run_string(" -->
+<!-- import numpy as np -->
+<!-- from pythermalcomfort.models import pmv -->
+
+<!-- def vectorized_pmv_all(tdb, tr, rh, vr, met, clo): -->
+<!--     tdb = np.array(tdb)[:, np.newaxis] -->
+<!--     tr  = np.array(tr)[:, np.newaxis] -->
+<!--     rh  = np.array(rh)[:, np.newaxis] -->
+<!--     vr  = np.array(vr)[np.newaxis, :] -->
+
+<!--     # Ensure inputs are float for pmv -->
+<!--     tdb = tdb.astype(float) -->
+<!--     tr = tr.astype(float) -->
+<!--     rh = rh.astype(float) -->
+<!--     vr = vr.astype(float) -->
+<!--     met_f = float(met) -->
+<!--     clo_f = float(clo) -->
+
+<!--     vec_func = np.vectorize(lambda t, r, h, v: pmv(tdb=t, tr=r, vr=v, rh=h, met=met, clo=clo, limit_inputs=False)) -->
+<!--     return vec_func(tdb, tr, rh, vr) -->
+<!-- ") -->
+
+<!-- # ---- End ---- -->
+
+<!-- PYTHON_FUNCTION_STRING <- " -->
+<!-- import numpy as np -->
+<!-- from pythermalcomfort.models import pmv -->
+
+<!-- def vectorized_pmv_all(tdb, tr, rh, vr, met, clo): -->
+<!--     tdb = np.asarray(tdb)[:, np.newaxis] -->
+<!--     tr  = np.asarray(tr)[:, np.newaxis] -->
+<!--     rh  = np.asarray(rh)[:, np.newaxis] -->
+<!--     vr  = np.asarray(vr)[np.newaxis, :] -->
+
+<!--     met_f = float(met) -->
+<!--     clo_f = float(clo) -->
+
+<!--     vec_func = np.vectorize( -->
+<!--         lambda t, r, h, v: pmv(tdb=t, tr=r, vr=v, rh=h, met=met_f, clo=clo_f, limit_inputs=False) -->
+<!--     ) -->
+<!--     return vec_func(tdb, tr, rh, vr) -->
+<!-- " -->
+
+<!-- # Define function in current R session's Python -->
+<!-- py_run_string(PYTHON_FUNCTION_STRING) -->
+
+
+PYTHON_FUNCTION_STRING <- "
+import numpy as np
+from pythermalcomfort.models import pmv
+
+def vectorized_pmv_all(tdb, tr, rh, vr, met, clo):
+    # Rからの入力をNumPy配列に変換
+    tdb_arr = np.asarray(tdb)
+    tr_arr  = np.asarray(tr)
+    rh_arr  = np.asarray(rh)
+    vr_arr  = np.asarray(vr) # vrはc(0.1, 0.4...)などのベクトル
+
+    # 結果を格納する行列を準備 (時間数 x 風速数)
+    # pythermalcomfort.models.pmv は配列入力を受け取れるので、
+    # 各風速ごとに一気に計算させる
+    results = []
+    for v in vr_arr:
+        # この pmv() 呼び出し自体が C 言語レベルで高速にベクトル化されています
+        res = pmv(tdb=tdb_arr, tr=tr_arr, vr=v, rh=rh_arr, 
+                  met=float(met), clo=float(clo), limit_inputs=False)
+        results.append(res)
+    
+    # 行列として返す (時間 x 風速)
+    return np.column_stack(results)
+"
+
+```{r}
+# PMV for multiple clo, MET setting
+```
+
+<!-- ## Before 26 Feb 14, looping for 66 clo/met cases, that is still heavy -->
+<!-- # function to analyze NV hours parallel -->
+<!-- analyze_nv_from_csv_multiroom_parallel <- function(country_name, -->
+<!--                                                     max_outdoor_range = 27:32, -->
+<!--                                                     vr_values = c(0.1, 0.4, 0.8, 1.2, 1.6, 2.0), -->
+<!--                                                     met_range = seq(0.8, 1.8, by = 0.1), -->
+<!--                                                     clo_range = seq(0.3, 0.5, by = 0.04)) { -->
+
+<!--   base_path <- path.expand("~/localdir/analysis/data/idf/12.cals") -->
+
+<!--   room_names <- c( -->
+<!--     "LIVING_UNIT1_FRONTROW_BOTTOMFLOOR", "LIVING_UNIT2_FRONTROW_BOTTOMFLOOR", "LIVING_UNIT3_FRONTROW_BOTTOMFLOOR", -->
+<!--     "LIVING_UNIT1_BACKROW_BOTTOMFLOOR", "LIVING_UNIT2_BACKROW_BOTTOMFLOOR", "LIVING_UNIT3_BACKROW_BOTTOMFLOOR", -->
+<!--     "LIVING_UNIT1_FRONTROW_MIDDLEFLOOR", "LIVING_UNIT2_FRONTROW_MIDDLEFLOOR", "LIVING_UNIT3_FRONTROW_MIDDLEFLOOR", -->
+<!--     "LIVING_UNIT1_BACKROW_MIDDLEFLOOR", "LIVING_UNIT2_BACKROW_MIDDLEFLOOR", "LIVING_UNIT3_BACKROW_MIDDLEFLOOR", -->
+<!--     "LIVING_UNIT3_BACKROW_TOPFLOOR", "LIVING_UNIT3_FRONTROW_TOPFLOOR", "LIVING_UNIT1_FRONTROW_TOPFLOOR", -->
+<!--     "LIVING_UNIT2_BACKROW_TOPFLOOR", "LIVING_UNIT2_FRONTROW_TOPFLOOR", "LIVING_UNIT1_BACKROW_TOPFLOOR" -->
+<!--   ) -->
+
+<!--   all_case_results <- list() -->
+
+<!--   for (max_outdoor in max_outdoor_range) { -->
+<!--     case_label <- paste0("MaxOutdoor_", max_outdoor) -->
+<!--     cat("[Processing] Starting analysis for:", case_label, "\n") -->
+<!--     case_start_time <- Sys.time() -->
+
+<!--     path_cal <- file.path(base_path, country_name, case_label) -->
+<!--     csv_path <- file.path(path_cal, "model_updated.csv") -->
+
+<!--     if (!file.exists(csv_path)) { -->
+<!--       cat("[Skip] CSV file not found:", csv_path, "\n") -->
+<!--       next -->
+<!--     } -->
+
+<!--     df_csv_original <- read.csv(csv_path, check.names = FALSE, stringsAsFactors = FALSE) -->
+<!--     if (nrow(df_csv_original) == 0) { -->
+<!--       cat("[Skip] CSV file is empty:", csv_path, "\n") -->
+<!--       next -->
+<!--     } -->
+<!--     colnames(df_csv_original)[1] <- "datetime" -->
+<!--     df_csv_original <- df_csv_original[-c(1:288), ] -->
+
+<!--     df_csv_original$datetime <- as.POSIXct( -->
+<!--       gsub("  ", " ", df_csv_original$datetime), -->
+<!--       format = "%m/%d %H:%M:%S" -->
+<!--     ) -->
+
+<!--     df_csv_filtered <- df_csv_original %>% -->
+<!--       filter(format(datetime, "%M") == "00") -->
+
+<!--     cat("  [Info] Original timesteps:", nrow(df_csv_original), "-> Filtered to hourly:", nrow(df_csv_filtered), "\n") -->
+
+<!--     col_setpoint <- "LIVING_UNIT1_FRONTROW_BOTTOMFLOOR:Zone Thermostat Cooling Setpoint Temperature [C](TimeStep)" -->
+<!--     if (!col_setpoint %in% colnames(df_csv_filtered)) { -->
+<!--       cat("[Warning] Cooling setpoint column not found:", col_setpoint, "\n") -->
+<!--       cooling_setpoint_df <- data.frame(datetime = as.POSIXct(character()), value = numeric()) -->
+<!--     } else { -->
+<!--       cooling_setpoint_df <- df_csv_filtered %>% -->
+<!--         select(datetime, value = all_of(col_setpoint)) %>% -->
+<!--         drop_na() -->
+<!--     } -->
+
+<!--     param_combinations <- expand.grid(m_val = met_range, c_val = clo_range, stringsAsFactors = FALSE) -->
+
+<!--     cat("  Starting parallel processing for", nrow(param_combinations), "Met/Clo combinations...\n") -->
+
+<!--     # ------- progress var setting ------- -->
+<!--     pb <- progress_bar$new( -->
+<!--       format = "  Calculating [:bar] :percent (ETA: :eta)", -->
+<!--       total = nrow(param_combinations), -->
+<!--       clear = FALSE, -->
+<!--       width = 80 -->
+<!--     ) -->
+<!--     progress <- function(n) pb$tick() -->
+<!--     opts <- list(progress = progress) -->
+<!--     # ------------------------------------ -->
+
+<!--     # parallel loop calculation -->
+<!--     parallel_results_list <- foreach( -->
+<!--       i = 1:nrow(param_combinations), -->
+<!--       .combine = "list", -->
+<!--       .multicombine = TRUE, -->
+<!--       .packages = c("reticulate", "dplyr", "tidyr"), -->
+<!--       .export = c("df_csv_filtered", "room_names", "vr_values", "PYTHON_FUNCTION_STRING", "param_combinations"), -->
+<!--       .errorhandling = "pass", -->
+<!--       .options.snow = opts # progress bar -->
+<!--     ) %dopar% { -->
+
+<!--       tryCatch({ -->
+<!--         if (!reticulate::py_has_attr(reticulate::py, "vectorized_pmv_all")) { -->
+<!--           reticulate::py_run_string(PYTHON_FUNCTION_STRING) -->
+<!--         } -->
+<!--         m_val <- param_combinations$m_val[i] -->
+<!--         c_val <- param_combinations$c_val[i] -->
+<!--         param_label <- paste0("met_", sprintf("%.1f", m_val), "_clo_", sprintf("%.2f", c_val)) -->
+<!--         current_param_room_results <- list() -->
+
+<!--         for (room in room_names) { -->
+<!--           col_temp <- paste0(room, ":Zone Mean Air Temperature [C](TimeStep)") -->
+<!--           col_rad <- paste0(room, ":Zone Mean Radiant Temperature [C](TimeStep)") -->
+<!--           col_hum <- paste0(room, ":Zone Air Relative Humidity [%](TimeStep)") -->
+<!--           required_cols <- c("datetime", col_temp, col_rad, col_hum) -->
+
+<!--           if (!all(required_cols %in% colnames(df_csv_filtered))) next -->
+
+<!--           df_room <- df_csv_filtered %>% -->
+<!--             select(all_of(required_cols)) %>% -->
+<!--             transmute( -->
+<!--               datetime = datetime, temperature = .data[[col_temp]], -->
+<!--               radiant = .data[[col_rad]], humidity = .data[[col_hum]] -->
+<!--             ) %>% -->
+<!--             drop_na() -->
+
+<!--           if (nrow(df_room) == 0) next -->
+
+<!--           pmv_matrix_result <- py$vectorized_pmv_all( -->
+<!--             df_room$temperature, df_room$radiant, df_room$humidity, vr_values, m_val, c_val -->
+<!--           ) -->
+
+<!--           if (!is.matrix(pmv_matrix_result)) stop("Python function did not return a matrix.") -->
+
+<!--           pmv_df <- data.frame(datetime = df_room$datetime) -->
+<!--           for (j_idx in seq_along(vr_values)) { -->
+<!--             pmv_df[[paste0("PMV_vr_", sprintf("%.2f", vr_values[j_idx]))]] <- pmv_matrix_result[, j_idx] -->
+<!--           } -->
+<!--           current_param_room_results[[room]] <- pmv_df -->
+<!--         } -->
+
+<!--         list(status = "success", param_label = param_label, results = current_param_room_results) -->
+<!--       }, error = function(e) { -->
+<!--         list( -->
+<!--           status = "error", -->
+<!--           param_label = paste0("met_", param_combinations$m_val[i], "_clo_", param_combinations$c_val[i]), -->
+<!--           error_message = as.character(e$message) -->
+<!--         ) -->
+<!--       }) -->
+<!--     } -->
+
+<!--     # merging results -->
+<!--     all_pmv_data_for_case <- list() -->
+<!--     error_list <- list() -->
+<!--     for (res_item in parallel_results_list) { -->
+<!--       if (!is.null(res_item$status) && res_item$status == "success") { -->
+<!--         all_pmv_data_for_case[[res_item$param_label]] <- res_item$results -->
+<!--       } else if (!is.null(res_item$status) && res_item$status == "error") { -->
+<!--         error_list[[res_item$param_label]] <- res_item$error_message -->
+<!--       } -->
+<!--     } -->
+<!--     if (length(error_list) > 0) { -->
+<!--       cat("\n--- ERRORS OCCURRED DURING PARALLEL PROCESSING ---\n") -->
+<!--       for (param_label in names(error_list)) { -->
+<!--         cat(" Parameters:", param_label, "\n  * Root Cause Error:", error_list[[param_label]], "\n") -->
+<!--       } -->
+<!--       cat("---------------------------------------------------\n") -->
+<!--     } -->
+
+<!--     # save results -->
+<!--     save_dir <- file.path("R.Data", country_name) -->
+<!--     if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE) -->
+
+<!--     save(all_pmv_data_for_case, cooling_setpoint_df, -->
+<!--          file = file.path(save_dir, paste0("PMV_result_", case_label, ".RData")), compress = "xz") -->
+
+<!--     all_case_results[[case_label]] <- list(PMV = all_pmv_data_for_case, Setpoint = cooling_setpoint_df) -->
+
+<!--     case_end_time <- Sys.time() -->
+<!--     cat("[Finished Case]:", case_label, "Total elapsed time:", round(difftime(case_end_time, case_start_time, units = "secs"), 2), "seconds\n\n") -->
+<!--   } -->
+
+<!--   return(all_case_results) -->
+<!-- } -->
+<!-- # ---- End ---- -->
+
+
+<!-- # ======  Execute Functions ====== -->
+
+<!-- ### For one city ### -->
+
+<!-- # --- 1. Setup parallel clusters --- -->
+<!-- # set num of core, as PC core-1, to avoid heavy operation -->
+<!-- num_cores <- detectCores() - 1 -->
+<!-- if (num_cores < 1) num_cores <- 1 -->
+<!-- # register doSNOW, enabling progress bar -->
+<!-- cl <- makeCluster(num_cores) -->
+<!-- registerDoSNOW(cl) -->
+<!-- cat(paste("Parallel backend registered with", num_cores, "cores.\n\n")) -->
+
+<!-- # --- 2. Analysis --- -->
+<!-- # Test case, max_outdoor_range=27:32 in SG -->
+<!-- results_test <- analyze_nv_from_csv_multiroom_parallel( -->
+<!--   country_name = "Singapore", -->
+<!--   max_outdoor_range = 27:32 -->
+<!-- ) -->
+<!-- # --- 3. Stop clusters --- -->
+<!-- stopCluster(cl) -->
+<!-- cat("\nParallel backend stopped.\n") -->
+<!-- # --- 4. Check results --- -->
+<!-- if (!is.null(results_test)) { -->
+<!--   cat("Analysis completed successfully.\n") -->
+<!-- } else { -->
+<!--   cat("An error occurred during the analysis.\n") -->
+<!-- } -->
+
+<!-- ### For multiple cities ### -->
+
+<!-- # --- 0. Setup parallel clusters --- -->
+<!-- # set num of core, as PC core-1, to avoid heavy operation -->
+<!-- num_cores <- detectCores() - 1 -->
+<!-- if (num_cores < 1) num_cores <- 1 -->
+<!-- # register doSNOW, enabling progress bar -->
+<!-- cl <- makeCluster(num_cores) -->
+<!-- registerDoSNOW(cl) -->
+<!-- cat(paste("Parallel backend registered with", num_cores, "cores.\n\n")) -->
+
+<!-- # ---1. get city name vector --- -->
+<!-- all_cities <- names(epw_dict) -->
+<!-- cities_to_run <- all_cities[1:20] -->
+
+<!-- # ---2. loop analysis --- -->
+<!-- total_start_time <- Sys.time() -->
+
+<!-- cat("===== STARTING BATCH ANALYSIS FOR MULTIPLE CITIES =====\n") -->
+<!-- cat("Target cities:", paste(cities_to_run, collapse = ", "), "\n\n") -->
+
+<!-- # try...finally, let clusters stop when error occurs during calculation -->
+<!-- try({ -->
+<!--   # loop cities -->
+<!--   for (city in cities_to_run) { -->
+<!--     cat(paste0("---------- Processing city: ", city, " ----------\n")) -->
+
+<!--     # analysis -->
+<!--     analyze_nv_from_csv_multiroom_parallel( -->
+<!--       country_name = city, -->
+<!--       max_outdoor_range = 27:32 -->
+<!--     ) -->
+
+<!--     cat(paste0("---------- Finished city: ", city, " ----------\n\n")) -->
+<!--   } -->
+<!-- }) -->
+<!-- finally({ -->
+<!--   # ---  stop clusters  --- -->
+<!--   stopCluster(cl) -->
+<!--   cat("\nParallel backend stopped.\n") -->
+
+<!--   total_end_time <- Sys.time() -->
+<!--   total_duration <- difftime(total_end_time, total_start_time) -->
+
+<!--   cat("===== BATCH ANALYSIS COMPLETED =====\n") -->
+<!--   cat("Total execution time:", round(total_duration, 2), units(total_duration), "\n") -->
+<!-- }) -->
+<!-- # ---- End ---- -->
+
+```{r}
+# PMV for multiple clo, MET setting 
+```
+
+## New loop based on city*temp cases, since each case is enough heavy to load functions
+
+analyze_nv_from_csv_case <- function(country_name, max_outdoor,
+                                     vr_values = c(0.1, 0.4, 0.8, 1.2, 1.6, 2.0),
+                                     met_range = seq(0.8, 1.8, by = 0.1),
+                                     clo_range = seq(0.3, 0.5, by = 0.04),
+                                     base_path = path.expand("~/localdir/analysis/data/idf/12.cals"),
+                                     room_names = NULL,
+                                     python_script = NULL, # ここでスクリプトを渡す
+                                     compress = "gzip") {
+  
+  # 1. 各コアでのPython初期化の徹底
+  if (!reticulate::py_has_attr(reticulate::py, "vectorized_pmv_all")) {
+    if (!is.null(python_script)) {
+      reticulate::py_run_string(python_script)
+    } else {
+      return(list(status="error", reason="python_script_missing"))
+    }
+  }
+
+  if (is.null(room_names)) {
+    room_names <- c(
+      "LIVING_UNIT1_FRONTROW_BOTTOMFLOOR","LIVING_UNIT2_FRONTROW_BOTTOMFLOOR","LIVING_UNIT3_FRONTROW_BOTTOMFLOOR",
+      "LIVING_UNIT1_BACKROW_BOTTOMFLOOR","LIVING_UNIT2_BACKROW_BOTTOMFLOOR","LIVING_UNIT3_BACKROW_BOTTOMFLOOR",
+      "LIVING_UNIT1_FRONTROW_MIDDLEFLOOR","LIVING_UNIT2_FRONTROW_MIDDLEFLOOR","LIVING_UNIT3_FRONTROW_MIDDLEFLOOR",
+      "LIVING_UNIT1_BACKROW_MIDDLEFLOOR","LIVING_UNIT2_BACKROW_MIDDLEFLOOR","LIVING_UNIT3_BACKROW_MIDDLEFLOOR",
+      "LIVING_UNIT3_BACKROW_TOPFLOOR","LIVING_UNIT3_FRONTROW_TOPFLOOR","LIVING_UNIT1_FRONTROW_TOPFLOOR",
+      "LIVING_UNIT2_BACKROW_TOPFLOOR","LIVING_UNIT2_FRONTROW_TOPFLOOR","LIVING_UNIT1_BACKROW_TOPFLOOR"
+    )
+  }
+
+  case_label <- paste0("MaxOutdoor_", max_outdoor)
+  path_cal <- file.path(base_path, country_name, case_label)
+  csv_path <- file.path(path_cal, "model_updated.csv")
+  
+  if (!file.exists(csv_path)) return(list(status="skip", reason="csv_not_found", country=country_name, case=case_label))
+
+  # fread & フィルタリング
+  df_csv_original <- data.table::fread(csv_path, check.names = FALSE, data.table = FALSE)
+  if (nrow(df_csv_original) == 0) return(list(status="skip", reason="csv_empty", country=country_name, case=case_label))
+
+  colnames(df_csv_original)[1] <- "datetime"
+  df_csv_original <- df_csv_original[-c(1:288), ]
+
+  # 日付パースの安全策
+  df_csv_original$datetime <- as.POSIXct(gsub("  ", " ", df_csv_original$datetime), format="%m/%d %H:%M:%S")
+  df_csv_filtered <- df_csv_original[!is.na(df_csv_original$datetime) & format(df_csv_original$datetime, "%M") == "00", ]
+  
+  if (nrow(df_csv_filtered) == 0) return(list(status="skip", reason="no_hourly_data", country=country_name, case=case_label))
+
+  # PMV計算ループ (ここは既存ロジックを維持)
+  param_combinations <- expand.grid(m_val=met_range, c_val=clo_range, stringsAsFactors=FALSE)
+  all_pmv_data_for_case <- list()
+  
+  for (i in seq_len(nrow(param_combinations))) {
+    m_val <- param_combinations$m_val[i]
+    c_val <- param_combinations$c_val[i]
+    param_label <- paste0("met_", sprintf("%.1f", m_val), "_clo_", sprintf("%.2f", c_val))
+    current_param_room_results <- list()
+
+    for (room in room_names) {
+      col_temp <- paste0(room, ":Zone Mean Air Temperature [C](TimeStep)")
+      col_rad  <- paste0(room, ":Zone Mean Radiant Temperature [C](TimeStep)")
+      col_hum  <- paste0(room, ":Zone Air Relative Humidity [%](TimeStep)")
+      
+      if (!(col_temp %in% colnames(df_csv_filtered) && col_rad %in% colnames(df_csv_filtered) && col_hum %in% colnames(df_csv_filtered))) next
+
+      df_room <- df_csv_filtered[, c("datetime", col_temp, col_rad, col_hum)]
+      names(df_room) <- c("datetime","temperature","radiant","humidity")
+      df_room <- df_room[complete.cases(df_room), ]
+      if (nrow(df_room) == 0) next
+
+      # Python呼び出し
+      pmv_matrix_result <- reticulate::py$vectorized_pmv_all(
+        df_room$temperature, df_room$radiant, df_room$humidity, vr_values, m_val, c_val
+      )
+
+      pmv_df <- data.frame(datetime=df_room$datetime)
+      for (j_idx in seq_along(vr_values)) {
+        pmv_df[[paste0("PMV_vr_", sprintf("%.2f", vr_values[j_idx]))]] <- pmv_matrix_result[, j_idx]
+      }
+      current_param_room_results[[room]] <- pmv_df
+    }
+    all_pmv_data_for_case[[param_label]] <- current_param_room_results
+  }
+  
+  # analyze_nv_from_csv_case 関数内の save(...) の直前に追加
+  cat(sprintf("\n[CHECK] Finished: %s - %s at %s\n", country_name, case_label, Sys.time()), 
+    file = "progress_log.txt", append = TRUE)
+  
+  # 保存処理
+  save_dir <- file.path("R.Data", country_name)
+  if (!dir.exists(save_dir)) dir.create(save_dir, recursive = TRUE)
+  save_path <- file.path(save_dir, paste0("PMV_result_", case_label, ".RData"))
+  
+  # Setpoint抽出
+  col_setpoint <- "LIVING_UNIT1_FRONTROW_BOTTOMFLOOR:Zone Thermostat Cooling Setpoint Temperature [C](TimeStep)"
+  cooling_setpoint_df <- if (col_setpoint %in% colnames(df_csv_filtered)) {
+    tmp <- df_csv_filtered[, c("datetime", col_setpoint)]
+    names(tmp)[2] <- "value"
+    tmp[!is.na(tmp$value), ]
+  } else {
+    data.frame(datetime=as.POSIXct(character()), value=numeric())
+  }
+
+  save(all_pmv_data_for_case, cooling_setpoint_df, file = save_path, compress = compress)
+
+  return(list(status="done", country=country_name, case=case_label, out=save_path))
+}
+
+# --- 実行セクション ---
+# クラスター設定
+<!-- num_cores <- parallel::detectCores() - 1 -->
+# 1. クラスターのセットアップ（10コア推奨）
+num_cores <- 12
+cl <- makeCluster(num_cores)
+registerDoSNOW(cl)
+
+# 2. 関数と変数の配布
+clusterExport(cl, c("PYTHON_FUNCTION_STRING", "analyze_nv_from_csv_case"))
+
+# 3. タスクの定義
+cities_to_run <- names(epw_dict)[21]
+max_range <- 27:32
+tasks <- expand.grid(city=cities_to_run, max_outdoor=max_range, stringsAsFactors=FALSE)
+
+# 4. プログレスバーの定義 (ここでエラーが出ないように確実に作成)
+pb <- txtProgressBar(max = nrow(tasks), style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress = progress)
+
+# 5. 実行
+results <- foreach(ii = seq_len(nrow(tasks)),
+                   .packages = c("data.table", "reticulate"),
+                   .options.snow = opts,             # ここで opts を使用
+                   .errorhandling = "pass") %dopar% {
+  
+  analyze_nv_from_csv_case(
+    country_name = tasks$city[ii],
+    max_outdoor = tasks$max_outdoor[ii],
+    python_script = PYTHON_FUNCTION_STRING
+  )
+}
+
+# 6. 後片付け
+close(pb)
+stopCluster(cl)
+
+```{r}
+# Loading multiple PMV data for clo, met combination
+```
+
+# 1. Load and data check, set path and parameters
+# -----------------------------------
+# project base path
+base_path <- here::here() 
+
+# check target city
+city_name <- "Freetown"
+
+# max outdoor temp range
+temp_range <- 27:32
+
+# 2. main loop
+# -----------------------------------
+
+# loop for max temp
+for (temp in temp_range) {
+  
+  # set path for target R.Data file
+  file_name <- paste0("PMV_result_MaxOutdoor_", temp, ".RData")
+  file_path <- file.path(base_path, "R.Data", city_name, file_name)
+  
+  # check if the file exists
+  if (!file.exists(file_path)) {
+    warning(paste("no file detected:", file_path))
+    next
+  }
+  
+  # ---- show file contents ----
+  cat("\n==========================================================\n")
+  cat("📂 Checking:", file_name, "\n")
+  cat("==========================================================\n\n")
+  
+  # temporaly loading
+  temp_env <- new.env()
+  load(file_path, envir = temp_env)
+  
+  # (1): get source list object 
+  # check if this object exists
+  if (exists("all_pmv_data_for_case", envir = temp_env)) {
+    main_list <- get("all_pmv_data_for_case", envir = temp_env)
+  } else {
+    warning(paste("object 'all_pmv_data_for_case' not found:", file_name))
+    next # skip this file, go to next file
+  }
+  
+  # (2):loop for contents in the list (MET, CLO)
+  # names(main_list), to get elements（met_0.8_clo_0.30 etc）
+  for (element_name in names(main_list)) {
+    
+    # ---- show object information ----
+    cat("-------------------------------------\n")
+    cat("⦿ source list: all_pmv_data_for_case\n")
+    cat("⦿ element", element_name, "\n")
+    
+    # (3): get element by name from list
+    element_data <- main_list[[element_name]]
+    
+    # show contents of elements
+    str(element_data) 
+  }
+}

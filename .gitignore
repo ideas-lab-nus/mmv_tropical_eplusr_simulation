@@ -1,0 +1,22 @@
+﻿.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Local/generated heavy inputs
+analysis/R.Data/
+analysis/data/idf/12.cals/
+
+# Legacy/internal outputs
+analysis/Result/
+analysis/old_Rnotebook/
+analysis/output/_smoke_test/
+analysis/output/test_pipeline/
+analysis/output/output/
+analysis/output/figures/clomet/
+
+# Local logs/rendered notebook artifacts
+analysis/*.html
+analysis/progress_log.txt
+analysis/NV_Counters_AllCities.RData
+analysis/Monthly_Tlow_Summary_All_Cities.csv

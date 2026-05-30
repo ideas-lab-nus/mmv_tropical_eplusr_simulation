@@ -1,0 +1,1090 @@
+---
+title: "Natural Ventilation Analysis Workflow"
+# Author: Kazuki Horikoshi
+# Date: 12/9/2024
+# Description: Analyzing NV hours based on increased velocity
+---
+```{r}
+# Public-facing analysis notebook
+# Execution order:
+# 1. Initialize config, helper sources, and canonical output paths
+# 2. Optionally run local diagnostics / exploratory PMV checks
+# 3. Build or reload cached metrics
+# 4. Generate comfort-hours, poster, energy, heatmap, and CLO/MET outputs
+```
+
+# Reset the notebook environment before sourcing the analysis configuration.
+rm(list = ls())
+
+source("config.R")
+source("src/io/availability_summary_io.R")
+source("src/io/energy_io.R")
+source("src/metrics/availability_metrics.R")
+source("src/metrics/energy_metrics.R")
+source("src/pipelines/availability_pipeline.R")
+source("src/pipelines/energy_pipeline.R")
+source("src/plots/plot_annotations.R")
+source("src/plots/comfort_hours_plots.R")
+source("src/plots/energy_plots.R")
+
+# Phase 1: Canonical analysis output roots
+initialize_canonical_output_dirs()
+
+all_metrics_cache_path <- ensure_parent_dir(file.path(output_cache_dir, "all_metrics_bh_cache.rds"))
+legacy_all_metrics_cache_path <- file.path(legacy_analysis_data_dir, "all_metrics_bh_cache.rds")
+
+comfort_hours_output_root <- ensure_dir(output_comfort_hours_dir)
+poster_output_root <- ensure_dir(output_poster_dir)
+
+energy_matrix_output_csv <- ensure_parent_dir(file.path(output_energy_dir, "TotalSiteEnergy_AllCities.csv"))
+energy_baseline_output_csv <- ensure_parent_dir(file.path(output_energy_dir, "TotalSiteEnergy_BaselineAllCities.csv"))
+energy_figure_output_dir <- ensure_dir(output_energy_figures_dir)
+
+heatmap_data_output_path <- ensure_parent_dir(file.path(output_heatmap_data_dir, "Heatmap_Data_All_Cities.RData"))
+legacy_heatmap_data_output_path <- file.path(legacy_heatmap_data_dir, "Heatmap_Data_All_Cities.RData")
+legacy_heatmap_backup_data_output_path <- file.path(legacy_heatmap_backup_data_dir, "Heatmap_Data_All_Cities.RData")
+heatmap_afam_output_path <- ensure_parent_dir(file.path(output_heatmap_figures_dir, "CombinedHeatMap_AfAm.png"))
+heatmap_aw_output_path <- ensure_parent_dir(file.path(output_heatmap_figures_dir, "CombinedHeatMap_Aw.png"))
+
+clomet_output_dir <- ensure_dir(output_clomet_figures_dir)
+
+## Optional Diagnostics and Exploratory Checks
+
+```{r}
+# Optional local diagnostics:
+# - set show_setup_diagnostics <- TRUE in config.R to print the Python environment
+# - set run_optional_input_check <- TRUE in config.R to inspect one PMV snapshot
+```
+
+if (show_setup_diagnostics) {
+  py_config()
+  display.brewer.all()
+}
+
+if (run_optional_input_check) {
+  city_name <- diagnostic_city_name
+  temp_range <- diagnostic_temp_range
+
+  for (temp in temp_range) {
+    file_name <- paste0("PMV_result_MaxOutdoor_", temp, ".RData")
+    diagnostic_pmv_file_path <- file.path(pmv_snapshot_root, city_name, file_name)
+
+    if (!file.exists(diagnostic_pmv_file_path)) {
+      warning(paste("no file detected:", diagnostic_pmv_file_path))
+      next
+    }
+
+    cat("\n==========================================================\n")
+    cat("Checking:", file_name, "\n")
+    cat("==========================================================\n\n")
+
+    temp_env <- new.env()
+    load(diagnostic_pmv_file_path, envir = temp_env)
+
+    if (exists("all_pmv_data_for_case", envir = temp_env)) {
+      main_list <- get("all_pmv_data_for_case", envir = temp_env)
+    } else {
+      warning(paste("object 'all_pmv_data_for_case' not found:", file_name))
+      next
+    }
+
+    for (element_name in names(main_list)) {
+      cat("-------------------------------------\n")
+      cat("[Source] all_pmv_data_for_case\n")
+      cat("[Element]", element_name, "\n")
+      element_data <- main_list[[element_name]]
+      str(element_data)
+    }
+  }
+}
+
+## Main Execution: Availability Metrics
+
+```{r}
+# Availability calculation for clo, met combination
+```
+
+# Availability metrics helpers: see src/metrics/availability_metrics.R
+# Worker pipeline helper: see src/pipelines/availability_pipeline.R
+
+# ==============================================================================
+# 3. Main Execution Block (Nested Loops + Parallel)
+# ==============================================================================
+
+# --- Setup Cities ---
+# Use city names from epw_dict unless a custom city vector is defined.
+# all_cities <- c("Singapore", "Tokyo", ...) 
+if (!exists("epw_dict")) stop("Please define 'epw_dict' or 'all_cities' vector first.")
+all_cities <- names(epw_dict)
+cities_to_run <- all_cities[21]
+
+# --- Setup Parameters ---
+target_max_outdoor_range <- 27:32
+velocity_scenarios_for_metrics <- list(1.2, 1.6, NULL) 
+
+cat("<<<<< ALL CITY METRICS CALCULATION START >>>>>\n")
+cat("Target Cities:", length(cities_to_run), "\n")
+
+# --- Start Cluster (Once) ---
+num_cores <- parallel::detectCores() - 1
+if (num_cores < 1) num_cores <- 1
+cl <- makeCluster(num_cores)
+registerDoSNOW(cl)
+cat(paste("[Info] Parallel backend registered with", num_cores, "cores.\n"))
+
+# --- Outer Loop: Cities ---
+for (city in cities_to_run) {
+  
+  cat("\n\n##################################################\n")
+  cat("###   STARTING METRICS ANALYSIS FOR:", city, "   ###\n")
+  cat("##################################################\n")
+  
+  # --- Middle Loop: Velocity Scenarios ---
+  for (max_v in velocity_scenarios_for_metrics) {
+    
+    vel_label <- if (is.null(max_v)) "2.0 (Original)" else as.character(max_v)
+    cat(paste0("\n  [Info] Processing with max_velocity = ", vel_label, " m/s\n"))
+    
+    # Progress bar setup for the inner parallel loop
+    pb <- txtProgressBar(max = length(target_max_outdoor_range), style = 3)
+    progress <- function(n) setTxtProgressBar(pb, n)
+    opts <- list(progress = progress)
+    
+    # --- Inner Loop (Parallel): Temperatures ---
+    # foreach sends the exported helpers to each worker and runs one temperature case per task.
+    results <- foreach(
+      temp = target_max_outdoor_range, 
+      .combine = c,
+      .options.snow = opts,
+      .packages = c("dplyr", "tidyr", "stringr"), 
+      .export = c("filter_by_business_hours", 
+                  "calculate_availability_optimized", 
+                  "combine_availability_single", 
+                  "calculate_violation_hours",
+                  "process_single_case")
+    ) %dopar% {
+      
+      # Run the worker task for one temperature case.
+      process_single_case(
+        max_outdoor = temp,
+        country_name = city,
+        max_velocity = max_v,
+        start_hour = 9, 
+        end_hour = 18, 
+        tz = "UTC"
+      )
+      
+    }
+    
+    close(pb) # close the progress bar
+    # print(results)
+  }
+  
+  cat(paste0("\n###   FINISHED ANALYSIS FOR:", city, "   ###\n"))
+}
+
+# --- Stop Cluster ---
+stopCluster(cl)
+cat("\n\n<<<<< ALL SELECTED CITIES PROCESSED. SCRIPT FINISHED. >>>>>\n")
+
+## Main Execution: Cached Metrics and Summary Figures
+
+```{r}
+# Reload all metrics from saved availability metrics data for Business Hours *** No Need to Run when using graphs
+```
+
+# Reload all metrics from saved availability metrics data for Business Hours
+# Availability summary I/O helper: see src/io/availability_summary_io.R
+
+# Phase 2: move notebook save/load paths to analysis/output/
+# --- Cached metrics reload ---
+# Reuse the cached business-hour metrics when available.
+cache_path <- all_metrics_cache_path
+cache_load_path <- resolve_canonical_or_legacy_path(cache_path, legacy_all_metrics_cache_path)
+
+# 1. Velocity scenarios to load
+scenarios_to_load <- list(1.2, 1.6, NULL)
+
+# --- 2. Load the cached data or rebuild from CSV summaries ---
+if (file.exists(cache_load_path)) {
+  # Cache hit: load the combined metrics directly.
+  message("Cached data found! Loading from .rds...")
+  all_metrics_bh <- readRDS(cache_load_path)
+
+} else {
+  # Cache miss: read the per-scenario CSV summaries and rebuild the cache.
+  message("No cache found. Processing CSV files...")
+
+  # Step 2: load each max_velocity scenario.
+  all_metrics_list <- lapply(scenarios_to_load, function(v) {
+    cat("Loading data for max_velocity scenario:", ifelse(is.null(v), "2.0 (original)", as.character(v)), "\n")
+    load_all_metrics_summary_business_hours(
+      epw_dict,
+      27:32,
+      start_hour = 9,
+      end_hour = 18,
+      max_velocity = v
+    )
+  })
+
+  # Step 3: combine scenarios and add plotting metadata.
+  all_metrics_bh <- dplyr::bind_rows(all_metrics_list) %>%
+    add_violation_rate(window = "bh", start_hour = 9, end_hour = 18) %>%
+    left_join(city_climate_mapping, by = "City")
+
+  # Save the rebuilt cache for later runs.
+  saveRDS(all_metrics_bh, cache_path)
+  message("Processing complete. Data saved to cache for next time.")
+}
+
+# Quick preview of the loaded metrics.
+head(all_metrics_bh)
+
+```{r}
+# Loading all datas to make graphs
+```
+
+# Re-load the cache explicitly before plotting.
+all_metrics_bh <- readRDS(
+  resolve_canonical_or_legacy_path(all_metrics_cache_path, legacy_all_metrics_cache_path)
+)
+
+# Quick preview of the cached metrics.
+head(all_metrics_bh)
+```{r}
+# Comfortable hours + Hours increase
+```
+# ==============================================================================
+# Helper function: Make a graph with increment
+# ==============================================================================
+# Comfort-hours plotting helper: see src/plots/comfort_hours_plots.R
+
+# ==============================================================================
+# Main execution (Modified for multiple velocity scenarios)
+# ==============================================================================
+
+# Define color palette
+set2_colors <- brewer.pal(n = 3, name = "Set2")
+
+# --- Define velocity scenarios to process ---
+velocity_scenarios_to_plot <- c(1.2, 1.6, 2.0)
+
+# --- Define desired city orders for consistent plotting ---
+desired_order_afam <- c(
+  # Af
+  "Guam","Honiara","KualaLumpur","Singapore",
+  # Am
+  "Freetown","Jakarta","Lagos","Manila","Miami","SantoDomingo"
+)
+desired_order_aw <- c("Bangkok","Mumbai","Chennai","RioDeJaneiro","Darwin",
+                      "Kolkata","Bengaluru","Hyderabad","Honolulu","Dhaka")
+
+
+# --- Main loop over each velocity scenario ---
+for (current_velocity in velocity_scenarios_to_plot) {
+
+  cat(paste("\n\n======================================================\n"))
+  cat(paste("--- Generating plots for Max Velocity:", current_velocity, "m/s ---\n"))
+  cat(paste(W"======================================================\n"))
+
+  # --- Create a specific, clear output directory for this velocity ---
+  # e.g., "Comfort_Hours_Plots_v_max_1_2"
+  velocity_dir_name <- paste0("Comfort_Hours_Plots_v_max_", gsub("\\.", "_", as.character(current_velocity)))
+  output_dir_for_velocity <- file.path(comfort_hours_output_root, velocity_dir_name)
+
+  # --- Filter the main data frame for the current velocity scenario ---
+  metrics_for_velocity <- all_metrics_bh %>%
+    dplyr::filter(MaxVelocity == current_velocity)
+
+  # --- Plot for Af+Am group ---
+  cat("\n--- Processing plot for plot group: Af+Am ---\n")
+  grp_afam <- metrics_for_velocity %>%
+    dplyr::filter(PlotGroup %in% c("Af","Am"))
+    
+  generate_increment_plot(
+      group_data = grp_afam,
+      current_plot_group = "Af+Am",
+      output_dir = output_dir_for_velocity,
+      max_v = current_velocity,
+      city_order = desired_order_afam,
+      city_display_mapping = city_display_mapping,
+      city_climate_mapping = city_climate_mapping,
+      set2_colors = set2_colors
+    )
+  
+  # --- Plot for Aw group ---
+  cat("\n--- Processing plot for plot group: Aw ---\n")
+  grp_aw <- metrics_for_velocity %>%
+    dplyr::filter(stringr::str_starts(PlotGroup, "Aw"))
+    # dplyr::mutate(City = factor(City, levels = desired_order_aw))
+
+  generate_increment_plot(
+    group_data = grp_aw,
+    current_plot_group = "Aw",
+    output_dir = output_dir_for_velocity,
+    max_v = current_velocity,
+    city_order = desired_order_aw,
+    city_display_mapping = city_display_mapping,
+    city_climate_mapping = city_climate_mapping,
+    set2_colors = set2_colors
+  )
+}
+
+```{r}
+# Poster plot: six selected cities with custom climate labels
+```
+
+# ==============================================================================
+# Poster-specific execution for six selected cities
+# ==============================================================================
+
+poster_city_order <- c(
+  "Singapore",
+  "Lagos",
+  "Manila",
+  "Mumbai",
+  "Hyderabad",
+  "RioDeJaneiro"
+)
+
+poster_city_display_mapping <- tibble::tribble(
+  ~City,            ~CityDisplay,
+  "Singapore",      "Singapore",
+  "Lagos",          "Lagos",
+  "Mumbai",         "Mumbai",
+  "Hyderabad",      "Hyderabad",
+  "Manila",         "Manila",
+  "RioDeJaneiro",   "Rio de Janeiro"
+)
+
+poster_city_climate_mapping <- tibble::tribble(
+  ~City,            ~ClimateGroup,
+  "Singapore",      "Af",
+  "Lagos",          "Am",
+  "Mumbai",         "Aw",
+  "Hyderabad",      "Aw",
+  "Manila",         "Am",
+  "RioDeJaneiro",   "Aw"
+)
+
+poster_velocity_scenarios_to_plot <- c(2.0)
+
+for (current_velocity in poster_velocity_scenarios_to_plot) {
+
+  cat(paste("\n\n======================================================\n"))
+  cat(paste("--- Generating poster plot for Max Velocity:", current_velocity, "m/s ---\n"))
+  cat(paste("======================================================\n"))
+
+  poster_velocity_dir_name <- paste0(
+    "Poster6Cities_Comfort_Hours_Plots_v_max_",
+    gsub("\\.", "_", as.character(current_velocity))
+  )
+  poster_output_dir_for_velocity <- file.path(
+    poster_output_root,
+    poster_velocity_dir_name
+  )
+
+  poster_metrics_for_velocity <- all_metrics_bh %>%
+    dplyr::filter(
+      MaxVelocity == current_velocity,
+      City %in% poster_city_order
+    )
+
+  generate_increment_plot(
+    group_data = poster_metrics_for_velocity,
+    current_plot_group = "Poster6Cities",
+    output_dir = poster_output_dir_for_velocity,
+    max_v = current_velocity,
+    city_order = poster_city_order,
+    city_display_mapping = poster_city_display_mapping,
+    city_climate_mapping = poster_city_climate_mapping,
+    set2_colors = set2_colors,
+    facet_ncol = 2,
+    plot_width = 6.5,
+    plot_height = 8.5,
+    y_limits = c(0, 2500),
+    y_breaks = c(0, 1000, 2000)
+  )
+}
+
+```{r}
+# Test - Comfort hour ratio
+```
+# Archived note:
+# An older comfort-ratio test block was removed from the main notebook body during
+# public cleanup because it was inactive and not part of the current workflow.
+
+
+## Main Execution: Energy and Pareto Figures
+
+```{r}
+# Energy value
+```
+energy_plot_data <- prepare_energy_plot_data(
+  epw_dict = epw_dict,
+  all_metrics_bh = all_metrics_bh,
+  main_temp_range = 27:32,
+  baseline_temp_range = 22,
+  base_path = simulation_csv_snapshot_root,
+  main_output_csv = energy_matrix_output_csv,
+  baseline_output_csv = energy_baseline_output_csv,
+  kbtu_to_kwh = KBTU_TO_KWH,
+  area_m2 = AREA_M2,
+  city_display_mapping = city_display_mapping
+)
+
+```{r}
+# Energy, violation plot
+```
+
+# =========================================================================
+# PART 1: DATA PREPARATION
+# =========================================================================
+
+total_site_energy_df <- energy_plot_data$total_site_energy_df
+total_site_energy_baseline_df <- energy_plot_data$total_site_energy_baseline_df
+energy_long <- energy_plot_data$energy_long
+energy_baseline_long <- energy_plot_data$energy_baseline_long
+energy_processed <- energy_plot_data$energy_processed
+violation_summary <- energy_plot_data$violation_summary
+master_data <- energy_plot_data$master_data
+
+# =========================================================================
+# PART 2: PLOT CONFIGURATION
+# =========================================================================
+
+temperature_shapes <- c(16, 17, 15, 18, 8, 3)
+energy_plot_palette <- RColorBrewer::brewer.pal(n = 8, name = "Set2")
+
+# =========================================================================
+# PART 3: EXECUTION & FINAL GRID ASSEMBLY
+# =========================================================================
+
+# Save the combined energy figures under the canonical analysis output folder.
+output_dir <- energy_figure_output_dir
+
+# --- Assemble and Save Energy Grid Plot ---
+energy_panel_args <- list(
+  palette = energy_plot_palette,
+  temperature_shapes = temperature_shapes,
+  x_breaks = seq(27, 32, by = 1),
+  y_limits = c(60, 88),
+  y_breaks = seq(60, 80, by = 10),
+  inpanel_legend_args = list(
+    x_range = c(27, 32),
+    y_range = c(60, 88),
+    n_per_row = 2,
+    x_pad_left = 0.3,
+    row_gap = 2.4,
+    text_size = 3.5
+  )
+)
+
+energy_grid_plot <- build_energy_grid_plot(
+  master_data = master_data,
+  plot_groups = plot_groups,
+  panel_args = energy_panel_args
+)
+
+save_energy_plot(
+  plot_obj = energy_grid_plot,
+  output_path = file.path(output_dir, "0_energy_intensity_grid.png"),
+  width = 7.5,
+  height = 7,
+  dpi = 300
+)
+
+# --- Assemble and Save Pareto Grid Plot ---
+pareto_panel_args <- list(
+  palette = energy_plot_palette,
+  temperature_shapes = temperature_shapes,
+  x_limits = c(0, 0.1),
+  x_breaks = seq(0, 0.1, by = 0.02),
+  y_limits = c(0, 0.45),
+  y_breaks = seq(0, 0.4, by = 0.1),
+  shape_legend_name = "Switch-over outdoor temperature (\u2103)",
+  city_legend_args = list(
+    y_start = 0.02,
+    y_step = 0.032,
+    x_seg_start = 0.063,
+    x_seg_end = 0.068,
+    x_text = 0.070,
+    segment_linewidth = 1.5,
+    text_size = 3.2
+  )
+)
+
+pareto_grid_plot <- build_pareto_grid_plot(
+  master_data = master_data,
+  plot_groups = plot_groups,
+  panel_args = pareto_panel_args
+)
+
+save_energy_plot(
+  plot_obj = pareto_grid_plot,
+  output_path = file.path(output_dir, "0_pareto_grid.png"),
+  width = 7,
+  height = 6.5,
+  dpi = 300
+)
+
+## Main Execution: Heatmap Workflow
+
+```{r}
+# Day of time analysis - Optimal velocity map
+```
+
+# Data gathering for Optimal velocity
+
+# 1. calculate data for heat map with temp and timeline
+# -----------------------------------------------------
+# Purpose:
+#   Create averaged NV availability heatmap data by hour (only business hours),
+#   for the given city and threshold.
+# Notes:
+#   - Business hours are [start_hour, end_hour) i.e., start inclusive, end exclusive.
+#   - If you want to include 18:00 hour as well, pass end_hour = 19.
+
+calculate_averaged_heatmap_data <- function(city_name, temp_threshold,
+                                            pmv_comfort_threshold = 0.5,
+                                            start_hour = 9, end_hour = 18) {
+  
+  cat("--- Calculating data for:", city_name, "with", temp_threshold, "\u2103 ---\n")
+
+  base_data_path <- file.path(pmv_snapshot_root, city_name)
+  pmv_rdata_file <- file.path(base_data_path, paste0("PMV_result_MaxOutdoor_", temp_threshold, ".RData"))
+  csv_path <- file.path(
+    simulation_csv_snapshot_root,
+    city_name, paste0("MaxOutdoor_", temp_threshold), "model_updated.csv"
+  )
+
+  if (!file.exists(pmv_rdata_file) || !file.exists(csv_path)) return(NULL)
+
+  load_env <- new.env()
+  load(pmv_rdata_file, envir = load_env)
+  all_pmv_data_for_case <- get("all_pmv_data_for_case", envir = load_env)
+
+  # 1. Load the CSV timeline data.
+  df_csv <- data.table::fread(csv_path, check.names = FALSE, data.table = FALSE)
+  
+  # Shift the CSV timestamps back by one hour to align with the PMV timeline.
+  df_csv$datetime <- as.POSIXct(paste("2026", gsub("  ", " ", df_csv[[1]])), 
+                                format="%Y %m/%d %H:%M:%S") - 3600
+  df_csv <- df_csv[!is.na(df_csv$datetime), ]
+  
+  col_setpoint <- grep("Thermostat Cooling Setpoint Temperature", names(df_csv), value = TRUE)[1]
+  df_csv$is_nv_active <- df_csv[[col_setpoint]] > (temp_threshold + 4.9)
+  cooling_setpoint_df <- df_csv[, c("datetime", "is_nv_active")]
+
+  # 2. Build hourly availability ratios for each MET/CLO combination.
+  list_of_hourly_ratios <- lapply(names(all_pmv_data_for_case), function(combo_name) {
+    PMV_list <- all_pmv_data_for_case[[combo_name]]
+
+    avail_list_per_wind <- lapply(PMV_list, function(pmv_df) {
+      # Shift PMV timestamps to match the CSV timeline.
+      pmv_df$datetime <- as.POSIXct(pmv_df$datetime) - 3600
+      
+      df_merged <- merge(pmv_df, cooling_setpoint_df, by = "datetime")
+      if (nrow(df_merged) == 0) return(NULL)
+
+      df_merged$hour <- as.integer(format(df_merged$datetime, "%H"))
+      df_merged <- df_merged[df_merged$hour >= start_hour & df_merged$hour < end_hour, ]
+
+      pmv_cols <- grep("PMV_", names(df_merged), value = TRUE)
+      avail_df <- df_merged %>%
+        dplyr::mutate(dplyr::across(
+          dplyr::all_of(pmv_cols),
+          ~ ifelse(is_nv_active, as.integer(.x > -pmv_comfort_threshold & .x < pmv_comfort_threshold), 0),
+          .names = "ava_{.col}"
+        )) %>%
+        dplyr::select(hour, dplyr::starts_with("ava_"))
+      return(avail_df)
+    })
+
+    avail_list_per_wind <- avail_list_per_wind[!vapply(avail_list_per_wind, is.null, logical(1))]
+    if (length(avail_list_per_wind) == 0) return(NULL)
+
+    all_df <- do.call(rbind, avail_list_per_wind)
+    num_days <- length(unique(format(df_csv$datetime, "%m/%d")))
+    total_steps_per_hour_bin <- num_days * length(avail_list_per_wind)
+
+    wind_cols <- grep("^ava_PMV_", names(all_df), value = TRUE)
+    hourly_counts <- stats::aggregate(all_df[, wind_cols, drop = FALSE],
+                                     by = list(Hour = all_df$hour), FUN = sum)
+
+    return(hourly_counts %>% dplyr::mutate(dplyr::across(-Hour, ~ (.x / total_steps_per_hour_bin) * 100)))
+  })
+
+  # 3. Drop NULL scenarios before combining the hourly ratios.
+  list_of_hourly_ratios <- list_of_hourly_ratios[!vapply(list_of_hourly_ratios, is.null, logical(1))]
+  if (length(list_of_hourly_ratios) == 0) return(NULL)
+
+  heatmap_data <- dplyr::bind_rows(list_of_hourly_ratios) %>%
+    dplyr::group_by(Hour) %>%
+    dplyr::summarise(dplyr::across(dplyr::everything(), ~ mean(.x, na.rm = TRUE)), .groups = "drop") %>%
+    tidyr::pivot_longer(cols = -Hour, names_to = "wind_col_name", values_to = "availability_ratio") %>%
+    dplyr::mutate(wind_speed_num = as.numeric(stringr::str_extract(wind_col_name, "[0-9.]+"))) %>%
+    dplyr::filter(wind_speed_num %in% c(0.1, 0.4, 0.8, 1.2, 1.6, 2.0)) %>%
+    dplyr::mutate(wind_speed = factor(wind_speed_num, levels = sort(unique(wind_speed_num), decreasing = TRUE))) %>%
+    dplyr::select(Hour, wind_speed, availability_ratio)
+
+  cat("  Success:", city_name, "\n")
+  return(heatmap_data)
+}
+
+# --- 1) Set up the parallel heatmap calculation ---
+# num_cores <- parallel::detectCores() - 1
+num_cores <- 10
+
+if (num_cores < 1) num_cores <- 1
+cl <- makeCluster(num_cores)
+registerDoSNOW(cl)
+
+# Export required objects to each worker.
+clusterExport(cl, c("calculate_averaged_heatmap_data", "city_temp_list"), envir = environment())
+
+# --- 2) Run the parallel calculation ---
+cat(paste0("\nStarting parallel calculation with ", num_cores, " cores...\n"))
+
+# Progress bar setup
+pb <- txtProgressBar(max = length(city_temp_list), style = 3)
+progress <- function(n) setTxtProgressBar(pb, n)
+opts <- list(progress = progress)
+
+all_cities_heatmap_data_list <- foreach(
+  city = names(city_temp_list),
+  .packages = c("dplyr", "tidyr", "lubridate"),
+  .options.snow = opts,
+  .errorhandling = "pass"
+) %dopar% {
+  
+  temp <- city_temp_list[[city]]
+  res <- calculate_averaged_heatmap_data(city, temp, start_hour = 9, end_hour = 18)
+  
+  # Return one named list entry only when data was created.
+  if (!is.null(res) && nrow(res) > 0) {
+    return(setNames(list(res), city))
+  } else {
+    return(NULL)
+  }
+}
+
+close(pb)
+stopCluster(cl)
+
+# --- 3) Combine the per-city results into one named list ---
+# list(list(Guam = df), list(Tokyo = df)) -> list(Guam = df, Tokyo = df)
+all_cities_heatmap_data <- do.call(c, all_cities_heatmap_data_list[!vapply(all_cities_heatmap_data_list, is.null, logical(1))])
+
+# --- 4) Save the heatmap source data ---
+save(all_cities_heatmap_data, file = heatmap_data_output_path)
+
+message("\nAll data calculations finished. Data saved in 'all_cities_heatmap_data' object.")
+
+```{r}
+# Day of time figures - Optimal velocity map
+```
+
+# Load saved RData file
+data_file <- resolve_canonical_or_legacy_path(
+  heatmap_data_output_path,
+  legacy_heatmap_data_output_path,
+  additional_paths = legacy_heatmap_backup_data_output_path
+)
+if(file.exists(data_file)) {
+  load(data_file)
+} else {
+  stop("Data file not found. Please run Part 1 first.")
+}
+
+# Group 2-column heatmap creation (facet version, legend 40%, color adjustment)
+# -----------------------------------------------------
+# Purpose:
+#   Build a single facet heatmap per group set with 2 columns (half width each),
+#   filter to business hours, cap legend at 40%, and save one image.
+# Inputs:
+#   - all_cities_heatmap_data: named list of DF per City (must include Hour, wind_speed, availability_ratio)
+#   - city_climate_mapping: DF with at least columns City and ClimateGroup (and/or PlotGroup)
+#   - target_cities: character vec of City names to include
+#   - output_file: save path (.png)
+#   - start_hour, end_hour: business hours (default 9-18 -> 9,10,...,17)
+# Notes:
+#   - Facet label shows "City\n(Temp\u2103)" when city_temp_df is provided
+# -----------------------------------------------------
+
+plot_group_heatmaps_two_columns <- function(all_cities_heatmap_data,
+                                            city_climate_mapping,
+                                            target_cities,
+                                            output_file,
+                                            city_temp_df = NULL,
+                                            desired_order = NULL,
+                                            start_hour = 9,
+                                            end_hour = 18) {
+  suppressPackageStartupMessages({
+    library(dplyr)
+    library(ggplot2)
+    library(scales)
+    library(RColorBrewer)
+  })
+
+  available <- intersect(target_cities, names(all_cities_heatmap_data))
+  if (length(available) == 0) {
+    message("No matching cities found. Skip.")
+    return(invisible(NULL))
+  }
+
+  group_df <- bind_rows(all_cities_heatmap_data[available], .id = "City") %>%
+    filter(Hour >= start_hour, Hour < end_hour) %>%
+    left_join(city_climate_mapping %>% select(City, ClimateGroup), by = "City") %>%
+    # --- Display name mapping (City -> CityDisplay) ---
+    left_join(city_display_mapping, by = "City") %>%
+    mutate(CityDisplay = coalesce(CityDisplay, City))
+
+  # Label format: "CityDisplay (Af, 29\u2103)" (no line break)
+  if (!is.null(city_temp_df)) {
+    group_df <- left_join(group_df, city_temp_df, by = "City")
+    group_df <- mutate(group_df, FacetLabel = paste0(CityDisplay, " (", ClimateGroup, ", ", Temp, "\u2103)"))
+  } else {
+    group_df <- mutate(group_df, FacetLabel = paste0(CityDisplay, " (", ClimateGroup, ")"))
+  }
+
+  # enforce desired order (desired_order is City keys, not display names)
+  if (!is.null(desired_order)) {
+    city_to_label <- group_df %>%
+      distinct(City, FacetLabel) %>%
+      mutate(City = as.character(City))
+
+    ordered_levels <- city_to_label$FacetLabel[match(desired_order, city_to_label$City)]
+    ordered_levels <- ordered_levels[!is.na(ordered_levels)]
+
+    group_df$FacetLabel <- factor(group_df$FacetLabel, levels = unique(ordered_levels))
+  }
+
+  # --- color scale up to 40% ---
+ set2_colors <- brewer.pal(8, "Set2")
+  # Use the same green as "Comfortable Hours"
+  comfort_green <- set2_colors[1]
+  
+  pal_cols <- c("grey95", comfort_green)
+  pal_vals <- scales::rescale(c(0, 45))
+
+#  pal_cols <- c("grey95", set2_colors[6], set2_colors[5])
+#  pal_vals <- scales::rescale(c(0, 15, 40))
+
+p <- ggplot(group_df, aes(x = Hour, y = wind_speed, fill = availability_ratio)) +
+  geom_tile(color = "white", size = 0.2) +
+  geom_text(aes(label = as.integer(round(availability_ratio, 0))), size = 3.2, color = "black") +
+  facet_wrap(~ FacetLabel, ncol = 2, strip.position = "top") +
+  scale_fill_gradientn(
+    colors = pal_cols,
+    values = pal_vals,
+    limits = c(0, 45),
+    breaks = seq(0, 40, 10),
+    labels = function(x) paste0(x, "%"),
+    name = "NV availability ratio"
+  ) +
+  scale_x_continuous(breaks = seq(start_hour, end_hour - 1, 1), expand = c(0, 0)) +
+  labs(x = "Time of Day (Hour)", y = "Relative air speed (m/s)") +
+  guides(
+    fill = guide_colorbar(
+      title.position = "left",        # title next to bar
+      title.vjust = 0.5,              # vertically centered
+      barheight = grid::unit(1.8, "mm"),
+      barwidth  = grid::unit(55, "mm")
+    )
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    # --- remove grids (keep clean heatmap) ---
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+
+    # --- legend on top, compact spacing ---
+    legend.position = "top",
+    legend.direction = "horizontal",
+    legend.box = "horizontal",
+    legend.box.spacing = grid::unit(0, "pt"),
+    legend.margin = margin(t = 0, r = 0, b = 0, l = 0),
+    legend.title = element_text(margin = margin(r = 6)),  # space between title and bar
+    legend.text  = element_text(margin = margin(t = 0)),
+
+    # --- reduce wasted top whitespace ---
+    plot.margin = margin(t = 2, r = 5, b = 5, l = 5),
+
+    # --- facet strip styling (City label) ---
+    strip.background = element_blank(),             # remove gray strip bg
+    strip.text = element_text(size = 11, face = "bold"),
+    strip.placement = "outside"
+  )
+#  <!-- fig_width <- 7 -->
+#  <!-- fig_height <- max(2.0 * n_rows, 4) -->
+
+  fig_width <- 7
+  fig_height <- 8
+
+  dir.create(dirname(output_file), recursive = TRUE, showWarnings = FALSE)
+  ggsave(output_file, plot = p, width = fig_width, height = fig_height, dpi = 300, bg = "white")
+  message("Saved: ", output_file)
+}
+# ---- End ----
+
+# Build a lookup table for the city-specific target temperatures.
+# Inputs:
+# - all_cities_heatmap_data: list(City = df)
+# - city_climate_mapping: DF with City, ClimateGroup (Af/Am/Aw), optionally PlotGroup
+# - city_temp_list: named list or named numeric of optimal temps
+# ---- End ----
+# Convert city_temp_list to a data frame for facet labels.
+city_temp_df <- data.frame(
+  City = names(city_temp_list),
+  Temp = unlist(city_temp_list),
+  row.names = NULL
+)
+
+# Af + Am
+plot_group_heatmaps_two_columns(
+  all_cities_heatmap_data,
+  city_climate_mapping,
+  target_cities = desired_order_afam,
+  output_file  = heatmap_afam_output_path,
+  city_temp_df = city_temp_df,
+  desired_order = desired_order_afam
+)
+
+# Aw
+plot_group_heatmaps_two_columns(
+  all_cities_heatmap_data,
+  city_climate_mapping,
+  target_cities = desired_order_aw,
+  output_file  = heatmap_aw_output_path,
+  city_temp_df = city_temp_df,
+  desired_order = desired_order_aw
+)
+# ---- End ----
+
+
+## Main Execution: CLO/MET Maps
+
+```{r}
+# Hours map for MET CLO combination
+```
+
+# hours_per_year ---------------------------------------------------------------
+# Purpose: return the number of business-hour slots in one year.
+hours_per_year <- function(start_hour = 9, end_hour = 18) {
+  (end_hour - start_hour) * 365  # e.g. 9 hours/day * 365 = 3285
+}
+# ---- End ----
+
+# 3. save directory
+# -----------------------------------------------------
+output_dir_base <- clomet_output_dir
+
+# plot_clomet_maps_daytime (Af+Am / Aw only, with "City-Climate-Temp" labels)
+## Purpose:
+##   Generate daytime CLO/MET comfort maps for the Af+Am and Aw groups using the target temperature for each city.
+##   - all_metrics_bh: daytime summary data with City, MaxOutdoorTemp, MET, CLO, ActualOKHours
+##   - city_climate_mapping / optimal_temps: city metadata and target temperatures
+##   - start_hour, end_hour: business-hour window used for the source metrics
+##   - output_dir_base / num_cols_max: output location and max columns per combined figure
+##   - contour_by / fill_max: contour interval and color-scale limit for comfort hours
+##   - desired_order_afam: optional city order for Af+Am panels
+##   - desired_order_aw: optional city order for Aw panels
+##   - invisible list: group -> list(city = ggplot object)
+## Dependencies:
+##   dplyr, tibble, ggplot2, patchwork, akima, metR, scales, here
+plot_clomet_maps_daytime <- function(
+  all_metrics_bh,
+  city_climate_mapping,
+  optimal_temps,                  
+  start_hour = 9, end_hour = 18,  
+  output_dir_base = output_clomet_figures_dir,
+  num_cols_max = 4,
+  contour_by = 200,
+  fill_max = 2500,
+  # optional: enforce city order for Af+Am (vector of city names). leave NULL if not needed.
+  desired_order_afam = NULL,
+  desired_order_aw   = NULL
+) {
+  # ---- Build city -> TargetTemp table ----
+  optimal_temps_df <- tibble::enframe(optimal_temps, name = "City", value = "TargetTemp")
+  city_data <- dplyr::left_join(city_climate_mapping, optimal_temps_df, by = "City")
+  
+  if (!dir.exists(output_dir_base)) dir.create(output_dir_base, recursive = TRUE, showWarnings = FALSE)
+  message("Starting comfort map generation for Af+Am and Aw (daytime)")
+  
+  # ---- Two combined groups only ----
+  combined_groups <- list(
+    "Af+Am" = c("Af","Am"),
+    "Aw"    = c("Aw (South Asia)","Aw (Other)")
+  )
+  
+  out_plots <- list()
+  
+  for (current_group in names(combined_groups)) {
+    groups <- combined_groups[[current_group]]
+    message(paste("Processing group:", current_group))
+    
+    # pick cities that belong to the target plot groups
+    cities_in_group <- dplyr::filter(city_data, PlotGroup %in% groups)
+    
+    # optional: enforce display order
+    if (!is.null(desired_order_afam) && current_group == "Af+Am") {
+      cities_in_group$City <- factor(cities_in_group$City, levels = desired_order_afam)
+      cities_in_group <- dplyr::arrange(cities_in_group, City)
+    }
+    if (!is.null(desired_order_aw) && current_group == "Aw") {
+      cities_in_group$City <- factor(cities_in_group$City, levels = desired_order_aw)
+      cities_in_group <- dplyr::arrange(cities_in_group, City)
+    }
+    
+    num_plots <- nrow(cities_in_group)
+    if (num_plots == 0) {
+      message(paste("  -> No cities for group:", current_group))
+      out_plots[[current_group]] <- list()
+      next
+    }
+    
+    num_cols <- min(num_plots, num_cols_max)
+    num_rows <- ceiling(num_plots / num_cols)
+    
+    plot_list <- list()
+    
+    for (j in seq_len(num_plots)) {
+      current_city <- as.character(cities_in_group$City[j])
+      target_temp  <- cities_in_group$TargetTemp[j]
+      climate_grp  <- cities_in_group$ClimateGroup[j]
+      message(paste("  - Generating map for:", current_city, "at", target_temp, "\u2103"))
+      
+      filtered_data <- dplyr::filter(all_metrics_bh, City == current_city, MaxOutdoorTemp == target_temp)
+      if (nrow(filtered_data) < 3) {
+        message(paste("    -> Skipping", current_city, "(Not enough data points)"))
+        next
+      }
+      max_point <- filtered_data |>
+        dplyr::filter(ActualOKHours == max(ActualOKHours, na.rm = TRUE)) |>
+        dplyr::slice(1)
+      filtered_data_clean <- dplyr::filter(filtered_data, is.finite(MET) & is.finite(CLO) & is.finite(ActualOKHours))
+      if (nrow(filtered_data_clean) < 3) {
+        message(paste("    -> Skipping", current_city, "(Not enough finite data points)"))
+        next
+      }
+      
+      # ---- Interpolation ----
+      interp_result <- with(filtered_data_clean, akima::interp(x = MET, y = CLO, z = ActualOKHours, nx = 100, ny = 100))
+      interp_df <- as.data.frame(akima::interp2xyz(interp_result))
+      colnames(interp_df) <- c("MET", "CLO", "ActualOKHours")
+      
+      contour_breaks <- seq(0, fill_max, by = contour_by)
+      
+      p <- ggplot2::ggplot(interp_df, ggplot2::aes(x = MET, y = CLO)) +
+        ggplot2::geom_tile(ggplot2::aes(fill = ActualOKHours)) +
+        ggplot2::geom_contour(ggplot2::aes(z = ActualOKHours),
+                              breaks = contour_breaks, color = "gray40",
+                              alpha = 0.6, linewidth = 0.5) +
+        metR::geom_text_contour(ggplot2::aes(z = ActualOKHours),
+                                breaks = contour_breaks, stroke = 0.2,
+                                stroke.color = "white", size = 4, skip = 0) +
+        ggplot2::geom_point(data = max_point, color = "black", fill = "white",
+                            size = 4.5, shape = 21) +
+        ggplot2::geom_text(data = max_point,
+                           ggplot2::aes(label = round(ActualOKHours)),
+                           fontface = "bold", color = "black", nudge_y = 0.015) +
+        ggplot2::scale_fill_gradient(
+          low = "white", high = "#A6D854",
+          limits = c(0, 2000), name = "Comfort\nHours",
+          oob = scales::squish
+        ) +
+        ggplot2::coord_cartesian(xlim = c(0.8, 1.8), expand = FALSE) +
+        ggplot2::labs(x = "MET", y = "CLO") +
+        # ---- Label in-panel: "City-Climate-Temp" ----
+        ggplot2::annotate(
+          "text", x = 0.82, y = Inf,
+          label = paste0(current_city, "(", climate_grp, ") - ", target_temp, "\u2103"),
+          hjust = 0, vjust = 1.5, size = 6, fontface = "bold"
+        ) +
+        ggplot2::theme_minimal(base_size = 12) +
+        ggplot2::theme(
+          plot.title = ggplot2::element_text(face = "bold", size = 14),
+          legend.position = "right",
+          axis.text.x = ggplot2::element_text(size = 12),
+          axis.text.y = ggplot2::element_text(size = 12)
+        ) +
+        + ggplot2::guides(
+          fill = ggplot2::guide_colorbar(
+            title.position = "top",
+            title.hjust = 0.5,
+            barheight = grid::unit(2.5, "mm"),  # thinner legend bar
+            barwidth  = grid::unit(45, "mm")    # adjust length 
+          )
+        )
+      
+      # ---- Trim axes for interior panels ----
+      col_pos <- (j - 1) %% num_cols + 1
+      row_pos <- ceiling(j / num_cols)
+      if (col_pos != 1) {
+        p <- p + ggplot2::theme(
+          axis.title.y = ggplot2::element_blank(),
+          axis.text.y  = ggplot2::element_blank(),
+          axis.ticks.y = ggplot2::element_blank()
+        )
+      }
+      if (row_pos != num_rows) {
+        p <- p + ggplot2::theme(
+          axis.title.x = ggplot2::element_blank(),
+          axis.text.x  = ggplot2::element_blank(),
+          axis.ticks.x = ggplot2::element_blank()
+        )
+      }
+      plot_list[[current_city]] <- p
+    }
+    
+    # ---- Save a combined plot per group (Af+Am or Aw) ----
+    if (length(plot_list) > 0) {
+      combined_plot <- patchwork::wrap_plots(plot_list, ncol = num_cols, guides = 'collect') +
+        patchwork::plot_annotation(theme = ggplot2::theme(
+          plot.title = ggplot2::element_text(size = 16, face = "bold", hjust = 0.5)
+        )) & ggplot2::theme(legend.position = 'right')
+      
+      sanitized_group_name <- gsub("[^a-zA-Z0-9_+]", "_", current_group)
+      file_name <- paste0("ComfortMap_Group_", sanitized_group_name, ".png")
+      file_path <- file.path(output_dir_base, file_name)
+      
+      ggplot2::ggsave(
+        filename = file_path,
+        plot = combined_plot,
+        width = 3.5 * num_cols,
+        height = 3.5 * ceiling(length(plot_list)/num_cols),
+        dpi = 300, bg = "white", limitsize = FALSE
+      )
+      message(paste("  -> Combined plot saved to", file_path))
+      out_plots[[current_group]] <- plot_list
+    } else {
+      message(paste("  -> No plots were generated for group:", current_group))
+      out_plots[[current_group]] <- list()
+    }
+  }
+  
+  invisible(out_plots)
+}
+# ---- End ----
+
+# run_daytime_maps
+desired_order_afam <- c(
+  "Guam","Honiara","KualaLumpur","Singapore",        # Af
+  "Freetown","Jakarta","Lagos","Manila","Miami","SantoDomingo" # Am
+)
+
+desired_order_aw <- c( 
+  "Bangkok","Mumbai","Chennai","RioDeJaneiro","Darwin",
+  "Kolkata","Bengaluru","Hyderabad","Honolulu","Dhaka"
+)
+
+plot_clomet_maps_daytime(
+  all_metrics_bh = all_metrics_bh,
+  city_climate_mapping = city_climate_mapping,
+  optimal_temps = optimal_temps,
+  desired_order_afam = desired_order_afam,
+  desired_order_aw   = desired_order_aw
+)
+# ---- End ----

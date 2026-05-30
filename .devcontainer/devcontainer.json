@@ -1,0 +1,8 @@
+﻿{
+  "name": "mmv_tropical_eplusr_simulation",
+  "image": "hkazukinus/ideaslab_env_eplusr:2025nov",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/mmv_tropical_eplusr_simulation,type=bind",
+  "workspaceFolder": "/workspaces/mmv_tropical_eplusr_simulation",
+  "forwardPorts": [8787],
+  "overrideCommand": false
+}

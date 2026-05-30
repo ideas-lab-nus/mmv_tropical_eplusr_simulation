@@ -1,0 +1,3 @@
+refined window setting considering window area and window height, not using static vent ratio per sec
+refined SHGC, average of nothing and default glazing
+refined upon 250605_glazingstackvent
