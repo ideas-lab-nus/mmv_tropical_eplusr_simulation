@@ -28,8 +28,7 @@ This public copy includes selected input/model data and processed analysis outpu
 - Processed analysis outputs under `analysis/output/data/`.
 - Report figures under `analysis/output/figures/`.
 
-The final simulations use the DaytimeOnlyNV IDF set. The natural-ventilation lower outdoor-temperature condition is fixed at 20 deg C in the simulation outputs used by this analysis.
-
+The final simulations use the uploaded IDF set(DaytimeOnlyNV). 
 Full recomputation from raw simulation outputs requires the raw PMV and EnergyPlus snapshot folders listed above.
 
 ## Environment
